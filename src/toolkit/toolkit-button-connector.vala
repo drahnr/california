@@ -280,6 +280,8 @@ public class ButtonConnector : EventConnector {
                 if (button_states != null) {
                     InternalButtonEvent? details = button_states.get(widget);
                     if (details != null) {
+                        details.update_release(widget, event);
+                        
                         // fire "unguaranteed" clicked signals now (with button release) rather than
                         // wait for timeout using the current value of press_type before the details
                         // are updated
@@ -296,8 +298,6 @@ public class ButtonConnector : EventConnector {
                                 notify_triple_clicked(details, false);
                             break;
                         }
-                        
-                        details.update_release(widget, event);
                     }
                 }
             break;

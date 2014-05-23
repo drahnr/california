@@ -54,8 +54,7 @@ private class Grid : Gtk.Grid {
     
     private Gee.HashMap<Calendar.Date, Cell> date_to_cell = new Gee.HashMap<Calendar.Date, Cell>();
     private Backing.CalendarSubscriptionManager? subscriptions = null;
-    private Gdk.EventType button_press_type = Gdk.EventType.NOTHING;
-    private Gdk.Point button_press_point = Gdk.Point();
+    private Toolkit.ButtonConnector cell_button_connector = new Toolkit.ButtonConnector();
     
     public Grid(Controller owner, Calendar.MonthOfYear month_of_year) {
         this.owner = owner;
@@ -66,6 +65,9 @@ private class Grid : Gtk.Grid {
         column_spacing = 0;
         row_homogeneous = true;
         row_spacing = 0;
+        
+        cell_button_connector.clicked.connect(on_cell_single_click);
+        cell_button_connector.double_clicked.connect(on_cell_double_click);
         
         // prep the grid with a fixed number of rows and columns
         for (int row = 0; row < ROWS; row++)
@@ -81,9 +83,7 @@ private class Grid : Gtk.Grid {
                 // TODO: try to avoid this on first pass
                 Cell cell = new Cell(this, Calendar.System.today, row, col);
                 cell.expand = true;
-                cell.events |= Gdk.EventMask.BUTTON_PRESS_MASK & Gdk.EventMask.BUTTON1_MOTION_MASK;
-                cell.button_press_event.connect(on_cell_button_event);
-                cell.button_release_event.connect(on_cell_button_event);
+                cell_button_connector.connect_to(cell);
                 cell.motion_notify_event.connect(on_cell_motion_event);
                 
                 attach(cell, col, row, 1, 1);
@@ -301,112 +301,92 @@ private class Grid : Gtk.Grid {
         });
     }
     
-    private bool on_cell_button_event(Gtk.Widget widget, Gdk.EventButton event) {
-        // only interested in left-clicks
-        if (event.button != 1)
-            return false;
-        
-        // NOTE: widget is the *pressed* widget, even for "release" events, no matter where the release
-        // occurs
-        Cell press_cell = (Cell) widget;
-        
-        switch (event.type) {
-            case Gdk.EventType.BUTTON_PRESS:
-            case Gdk.EventType.2BUTTON_PRESS:
-            case Gdk.EventType.3BUTTON_PRESS:
-                button_press_type = event.type;
-                button_press_point.x = (int) event.x;
-                button_press_point.y = (int) event.y;
-            break;
-            
-            case Gdk.EventType.BUTTON_RELEASE:
-                // The GDK coordinates are relative to the pressed Cell, so translate to the GtkGrid
-                int grid_x, grid_y;
-                if (!press_cell.translate_coordinates(this, (int) event.x, (int) event.y, out grid_x,
-                    out grid_y)) {
-                    return false;
-                }
-                
-                // Now translate the released coordinates back to the right Cell, if it is a Cell
-                Cell? release_cell = translate_to_cell(grid_x, grid_y);
-                
-                // if released on a non-Cell, reset state and exit
-                if (release_cell == null) {
-                    unselect_all();
-                    button_press_type = Gdk.EventType.NOTHING;
-                    button_press_point = {};
-                    
-                    return false;
-                }
-                
-                // translate release point coordinates into the coordinates of the released cell
-                Gdk.Point button_release_point = Gdk.Point();
-                if (!press_cell.translate_coordinates(release_cell, (int) event.x, (int) event.y,
-                    out button_release_point.x, out button_release_point.y)) {
-                    return false;
-                }
-                
-                bool stop_propagation = false;
-                switch (button_press_type) {
-                    case Gdk.EventType.BUTTON_PRESS:
-                        stop_propagation = on_cell_single_click((Cell) widget, button_press_point,
-                            release_cell, button_release_point);
-                    break;
-                    
-                    case Gdk.EventType.2BUTTON_PRESS:
-                        stop_propagation = on_cell_double_click((Cell) widget, button_press_point,
-                            release_cell, button_release_point);
-                    break;
-                }
-                
-                // reset, but don't de-select the view controller might be in charge of that
-                button_press_type = Gdk.EventType.NOTHING;
-                button_press_point = {};
-                
-                return stop_propagation;
+    // A button event returns all coordinates in the coordinate system of the pressed widget ...
+    // this determines which widget the button was released over and returns the point of release
+    // in that widget's coordinate system
+    private Cell? get_released_cell(Toolkit.ButtonEvent details, ref Gdk.Point release_cell_point) {
+        // The GDK coordinates are relative to the pressed Cell, so translate to the GtkGrid
+        int grid_x, grid_y;
+        if (!details.widget.translate_coordinates(this, details.release_point.x, details.release_point.y,
+            out grid_x, out grid_y)) {
+            return null;
         }
         
-        return false;
+        // Now translate the released coordinates back to the right Cell, if it is a Cell
+        Cell? release_cell = translate_to_cell(grid_x, grid_y);
+        if (release_cell == null)
+            return null;
+        
+        // translate release point coordinates into the coordinates of the released cell
+        if (!details.widget.translate_coordinates(release_cell, details.release_point.x, details.release_point.y,
+            out release_cell_point.x, out release_cell_point.y)) {
+            return null;
+        }
+        
+        return release_cell;
     }
     
-    private bool on_cell_single_click(Cell press_cell, Gdk.Point press_point,
-        Cell release_cell, Gdk.Point release_point) {
-        bool stop_propagation = false;
+    private void on_cell_single_click(Toolkit.ButtonEvent details, bool guaranteed) {
+        // only want unguaranteed primary button clicks
+        if (details.button != Toolkit.Button.PRIMARY || guaranteed)
+            return;
+        
+        // get the Cell the button was released on (if it's a Cell at all)
+        Gdk.Point release_cell_point = Gdk.Point();
+        Cell? release_cell = get_released_cell(details, ref release_cell_point);
+        if (release_cell == null) {
+            // reset state and exit
+            unselect_all();
+            
+            return;
+        }
+        
+        //bool stop_propagation = false;
+        
+        Cell press_cell = (Cell) details.widget;
         
         // if pressed and released on the same cell, display the event at the released location
         if (press_cell == release_cell) {
-            Component.Event? event = release_cell.get_event_at(release_point);
+            Component.Event? event = release_cell.get_event_at(details.release_point);
             if (event != null) {
-                owner.request_display_event(event, release_cell, release_point);
-                stop_propagation = true;
+                owner.request_display_event(event, release_cell, release_cell_point);
+                //stop_propagation = true;
             }
-        } else if (press_cell.date != null && release_cell.date != null) {
+        } else {
             // create multi-day event
             owner.request_create_all_day_event(new Calendar.DateSpan(press_cell.date, release_cell.date),
-                release_cell, release_point);
-            stop_propagation = true;
-        } else {
-            // make sure to clear selections if no action is taken
-            unselect_all();
+                release_cell, release_cell_point);
+            //stop_propagation = true;
         }
         
-        return stop_propagation;
+        //return stop_propagation;
     }
     
-    private bool on_cell_double_click(Cell press_cell, Gdk.Point press_point, Cell release_cell,
-        Gdk.Point release_point) {
+    private void on_cell_double_click(Toolkit.ButtonEvent details, bool guaranteed) {
+        // only interested in unguaranteed primary button clicks
+        if (details.button != Toolkit.Button.PRIMARY || guaranteed)
+            return;
+        
+        // get the Cell the button was released on (if it's a Cell at all)
+        Gdk.Point release_cell_point = Gdk.Point();
+        Cell? release_cell = get_released_cell(details, ref release_cell_point);
+        if (release_cell == null) {
+            // reset state and exit
+            unselect_all();
+            
+            return;
+        }
+        
+        Cell press_cell = (Cell) details.widget;
+        
         // only interested in double-clicking on the same cell
         if (press_cell != release_cell)
-            return false;
+            return; //false;
         
         // if an existing event is double-clicked, ignore, as the single click handler is displaying
         // it (but stop propagation)
-        if (release_cell.get_event_at(release_point) != null)
-            return true;
-        
-        // if no date, still avoid propagating event
-        if (release_cell.date == null)
-            return true;
+        if (release_cell.get_event_at(release_cell_point) != null)
+            return; // true;
         
         // TODO: Define default time better
         Calendar.ExactTime start;
@@ -419,10 +399,10 @@ private class Grid : Gtk.Grid {
         
         Calendar.ExactTime end = start.adjust_time(1, Calendar.TimeUnit.HOUR);
         
-        owner.request_create_timed_event(new Calendar.ExactTimeSpan(start, end), release_cell, release_point);
+        owner.request_create_timed_event(new Calendar.ExactTimeSpan(start, end), release_cell, release_cell_point);
         
         // stop propagation
-        return true;
+        //return true;
     }
     
     private bool on_cell_motion_event(Gtk.Widget widget, Gdk.EventMotion event) {
