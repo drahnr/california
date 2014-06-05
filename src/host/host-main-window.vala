@@ -11,64 +11,124 @@ namespace California.Host {
  */
 
 public class MainWindow : Gtk.ApplicationWindow {
+    /**
+     * Minimum width of the main window (to be usable).
+     */
+    public const int MIN_WIDTH = 800;
+    
+    /**
+     * Default width of the main window (to be usable).
+     *
+     * This value is also set in the GSettings XML file.
+     */
+    public const int DEFAULT_WIDTH = 1024;
+    
+    /**
+     * Minimum height of the main window (to be usable).
+     */
+    public const int MIN_HEIGHT = 600;
+    
+    /**
+     * Default height of the main window (to be usable).
+     *
+     * This value is also set in the GSettings XML file.
+     */
+    public const int DEFAULT_HEIGHT = 768;
+    
     private const string PROP_FIRST_OF_WEEK = "first-of-week";
     
-    private const string ACTION_QUICK_CREATE_EVENT = "win.quick-create-event";
+    private const string DETAILED_ACTION_QUICK_CREATE_EVENT = "win.quick-create-event";
+    private const string ACTION_QUICK_CREATE_EVENT = "quick-create-event";
     private const string ACCEL_QUICK_CREATE_EVENT = "<Primary>n";
     
-    private const string ACTION_JUMP_TO_TODAY = "win.jump-to-today";
+    private const string DETAILED_ACTION_JUMP_TO_TODAY = "win.jump-to-today";
+    private const string ACTION_JUMP_TO_TODAY = "jump-to-today";
     private const string ACCEL_JUMP_TO_TODAY = "<Primary>t";
     
-    private const string ACTION_NEXT = "win.next";
+    private const string DETAILED_ACTION_NEXT = "win.next";
+    private const string ACTION_NEXT = "next";
     private const string ACCEL_NEXT = "<Alt>Right";
     
-    private const string ACTION_PREVIOUS = "win.previous";
+    private const string DETAILED_ACTION_PREVIOUS = "win.previous";
+    private const string ACTION_PREVIOUS = "previous";
     private const string ACCEL_PREVIOUS = "<Alt>Left";
     
-    private const string ACTION_MONTH = "win.view-month";
+    private const string DETAILED_ACTION_MONTH = "win.view-month";
+    private const string ACTION_MONTH = "view-month";
     private const string ACCEL_MONTH = "<Ctrl>M";
     
-    private const string ACTION_WEEK = "win.view-week";
+    private const string DETAILED_ACTION_WEEK = "win.view-week";
+    private const string ACTION_WEEK = "view-week";
     private const string ACCEL_WEEK = "<Ctrl>W";
     
+    private const string DETAILED_ACTION_INCREASE_FONT = "win.increase-font";
+    private const string ACTION_INCREASE_FONT = "increase-font";
+    private const string ACCEL_INCREASE_FONT = "KP_Add";
+    
+    private const string DETAILED_ACTION_DECREASE_FONT = "win.decrease-font";
+    private const string ACTION_DECREASE_FONT = "decrease-font";
+    private const string ACCEL_DECREASE_FONT = "KP_Subtract";
+    
+    private const string DETAILED_ACTION_RESET_FONT = "win.reset-font";
+    private const string ACTION_RESET_FONT = "reset-font";
+    private const string ACCEL_RESET_FONT = "KP_Multiply";
+    
     private static const ActionEntry[] action_entries = {
-        { "quick-create-event", on_quick_create_event },
-        { "jump-to-today", on_jump_to_today },
-        { "next", on_next },
-        { "previous", on_previous },
-        { "view-month", on_view_month },
-        { "view-week", on_view_week }
+        { ACTION_QUICK_CREATE_EVENT, on_quick_create_event },
+        { ACTION_JUMP_TO_TODAY, on_jump_to_today },
+        { ACTION_NEXT, on_next },
+        { ACTION_PREVIOUS, on_previous },
+        { ACTION_MONTH, on_view_month },
+        { ACTION_WEEK, on_view_week },
+        { ACTION_INCREASE_FONT, on_increase_font },
+        { ACTION_DECREASE_FONT, on_decrease_font },
+        { ACTION_RESET_FONT, on_reset_font }
     };
     
     // Set as a property so it can be bound to the current View.Controllable
     public Calendar.FirstOfWeek first_of_week { get; set; }
     
     private Gtk.Button quick_add_button;
-    private View.Controllable month_view = new View.Month.Controller();
-    private View.Controllable week_view = new View.Week.Controller();
+    private View.Palette palette;
+    private View.Controllable month_view;
+    private View.Controllable week_view;
     private View.Controllable? current_controller = null;
     private Gee.HashSet<Binding> current_bindings = new Gee.HashSet<Binding>();
     private Gtk.Stack view_stack = new Gtk.Stack();
     private Gtk.HeaderBar headerbar = new Gtk.HeaderBar();
     private Gtk.Button today = new Gtk.Button.with_label(_("_Today"));
+    private Binding view_stack_binding;
+    private Gee.HashSet<string> view_stack_ids = new Gee.HashSet<string>();
+    private int window_width = -1;
+    private int window_height = -1;
     
     public MainWindow(Application app) {
         Object (application: app);
         
         title = Application.TITLE;
-        set_size_request(800, 600);
-        set_default_size(1024, 768);
+        set_size_request(MIN_WIDTH, MIN_HEIGHT);
         set_default_icon_name(Application.ICON_NAME);
+        
+        set_default_size(Settings.instance.window_width, Settings.instance.window_height);
+        if (Settings.instance.window_maximized)
+            maximize();
         
         bool rtl = get_direction() == Gtk.TextDirection.RTL;
         
         add_action_entries(action_entries, this);
-        Application.instance.add_accelerator(ACCEL_QUICK_CREATE_EVENT, ACTION_QUICK_CREATE_EVENT, null);
-        Application.instance.add_accelerator(ACCEL_JUMP_TO_TODAY, ACTION_JUMP_TO_TODAY, null);
-        Application.instance.add_accelerator(rtl ? ACCEL_PREVIOUS : ACCEL_NEXT, ACTION_NEXT, null);
-        Application.instance.add_accelerator(rtl ? ACCEL_NEXT : ACCEL_PREVIOUS, ACTION_PREVIOUS, null);
-        Application.instance.add_accelerator(ACCEL_MONTH, ACTION_MONTH, null);
-        Application.instance.add_accelerator(ACCEL_WEEK, ACTION_WEEK, null);
+        Application.instance.add_accelerator(ACCEL_QUICK_CREATE_EVENT, DETAILED_ACTION_QUICK_CREATE_EVENT,
+            null);
+        Application.instance.add_accelerator(ACCEL_JUMP_TO_TODAY, DETAILED_ACTION_JUMP_TO_TODAY,
+            null);
+        Application.instance.add_accelerator(rtl ? ACCEL_PREVIOUS : ACCEL_NEXT, DETAILED_ACTION_NEXT,
+            null);
+        Application.instance.add_accelerator(rtl ? ACCEL_NEXT : ACCEL_PREVIOUS, DETAILED_ACTION_PREVIOUS,
+            null);
+        Application.instance.add_accelerator(ACCEL_MONTH, DETAILED_ACTION_MONTH, null);
+        Application.instance.add_accelerator(ACCEL_WEEK, DETAILED_ACTION_WEEK, null);
+        Application.instance.add_accelerator(ACCEL_INCREASE_FONT, DETAILED_ACTION_INCREASE_FONT, null);
+        Application.instance.add_accelerator(ACCEL_DECREASE_FONT, DETAILED_ACTION_DECREASE_FONT, null);
+        Application.instance.add_accelerator(ACCEL_RESET_FONT, DETAILED_ACTION_RESET_FONT, null);
         
         // view stack settings
         view_stack.homogeneous = true;
@@ -77,6 +137,13 @@ public class MainWindow : Gtk.ApplicationWindow {
         
         // subscribe before adding so first add to initialize UI
         view_stack.notify["visible-child"].connect(on_view_changed);
+        
+        // create a View.Palette for all the hosted views ...
+        palette = new View.Palette(this);
+        
+        // ... then create the hosted views
+        month_view = new View.Month.Controller(palette);
+        week_view = new View.Week.Controller(palette);
         
         // add views to view stack, first added is first shown
         add_controller(month_view);
@@ -87,26 +154,25 @@ public class MainWindow : Gtk.ApplicationWindow {
 #if !ENABLE_UNITY
         // Unity doesn't support GtkHeaderBar-as-title-bar very well yet; when set, the main
         // window can't be resized no matter what additional GtkWindow properties are set
-        headerbar.show_close_button = true;
         set_titlebar(headerbar);
 #endif
         
         today.valign = Gtk.Align.CENTER;
         today.use_underline = true;
         today.tooltip_text = _("Jump to today's date (Ctrl+T)");
-        today.set_action_name(ACTION_JUMP_TO_TODAY);
+        today.set_action_name(DETAILED_ACTION_JUMP_TO_TODAY);
         
         Gtk.Button prev = new Gtk.Button.from_icon_name(rtl ? "go-previous-rtl-symbolic" : "go-previous-symbolic",
             Gtk.IconSize.MENU);
         prev.valign = Gtk.Align.CENTER;
         prev.tooltip_text = _("Previous (Alt+Left)");
-        prev.set_action_name(ACTION_PREVIOUS);
+        prev.set_action_name(DETAILED_ACTION_PREVIOUS);
         
         Gtk.Button next = new Gtk.Button.from_icon_name(rtl ? "go-next-rtl-symbolic" : "go-next-symbolic",
             Gtk.IconSize.MENU);
         next.valign = Gtk.Align.CENTER;
         next.tooltip_text = _("Next (Alt+Right)");
-        next.set_action_name(ACTION_NEXT);
+        next.set_action_name(DETAILED_ACTION_NEXT);
         
         Gtk.Box nav_buttons = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 0);
         nav_buttons.get_style_context().add_class(Gtk.STYLE_CLASS_LINKED);
@@ -131,14 +197,18 @@ public class MainWindow : Gtk.ApplicationWindow {
         quick_add_button = new Gtk.Button.from_icon_name("list-add-symbolic", Gtk.IconSize.MENU);
         quick_add_button.valign = Gtk.Align.CENTER;
         quick_add_button.tooltip_text = _("Quick add event (Ctrl+N)");
-        quick_add_button.set_action_name(ACTION_QUICK_CREATE_EVENT);
+        quick_add_button.set_action_name(DETAILED_ACTION_QUICK_CREATE_EVENT);
         
         Gtk.Button calendars = new Gtk.Button.from_icon_name("x-office-calendar-symbolic",
             Gtk.IconSize.MENU);
         calendars.valign = Gtk.Align.CENTER;
         calendars.tooltip_text = _("Calendars (Ctrl+L)");
-        calendars.set_action_name(Application.ACTION_CALENDAR_MANAGER);
-
+        calendars.set_action_name(Application.DETAILED_ACTION_CALENDAR_MANAGER);
+        
+        Gtk.MenuButton window_menu = new Gtk.MenuButton();
+        window_menu.menu_model = Resource.load<MenuModel>("window-menu.interface", "window-menu");
+        window_menu.add(new Gtk.Image.from_icon_name("emblem-system-symbolic", Gtk.IconSize.SMALL_TOOLBAR));
+        
         // Vertically center all buttons and put them in a SizeGroup to handle situations where
         // the text button is smaller than the icons buttons due to language (i.e. Hebrew)
         // see https://bugzilla.gnome.org/show_bug.cgi?id=729771
@@ -148,10 +218,12 @@ public class MainWindow : Gtk.ApplicationWindow {
         size.add_widget(next);
         size.add_widget(quick_add_button);
         size.add_widget(calendars);
+        size.add_widget(window_menu);
         
         // pack right-side of window
         headerbar.pack_end(quick_add_button);
         headerbar.pack_end(calendars);
+        headerbar.pack_end(window_menu);
         
         Gtk.Box layout = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
         // if on Unity, since headerbar is not the titlebar, need to pack it like any other widget
@@ -161,18 +233,66 @@ public class MainWindow : Gtk.ApplicationWindow {
         layout.pack_end(view_stack, true, true, 0);
         
         add(layout);
+        
+        // bind stack's visible child property to the settings for it, both ways ... because we want
+        // to initialize with the settings, use it as the source w/ SYNC_CREATE
+        view_stack_binding = Settings.instance.bind_property(Settings.PROP_CALENDAR_VIEW, view_stack,
+            "visible-child-name", BindingFlags.SYNC_CREATE | BindingFlags.BIDIRECTIONAL,
+            transform_setting_to_calendar_view);
+        
+        // to prevent storing the different children's names as the widget is destroyed (cleared,
+        // i.e. remove each one by one), unbind before that occurs
+        view_stack.destroy.connect(() => { BaseObject.unbind_property(ref view_stack_binding); });
+        
+        // monitor Settings to adjust actions and such
+        Settings.instance.notify[Settings.PROP_SMALL_FONT_PTS].connect(on_font_size_changed);
+        Settings.instance.notify[Settings.PROP_NORMAL_FONT_PTS].connect(on_font_size_changed);
+        on_font_size_changed();
     }
     
-    public override void map() {
-        // give View.Palette a chance to gather display metrics for the various Views (week, months,
-        // etc.)
-        View.Palette.instance.main_window_mapped(this);
+    ~MainWindow() {
+        Settings.instance.notify[Settings.PROP_SMALL_FONT_PTS].disconnect(on_font_size_changed);
+        Settings.instance.notify[Settings.PROP_NORMAL_FONT_PTS].disconnect(on_font_size_changed);
+    }
+    
+    public bool is_window_maximized() {
+        Gdk.Window? window = get_window();
+        if (window == null)
+            return false;
         
-        base.map();
+        return (window.get_state() & Gdk.WindowState.MAXIMIZED) != 0;
+    }
+    
+    public override void unmap() {
+        Settings.instance.window_width = window_width;
+        Settings.instance.window_height = window_height;
+        Settings.instance.window_maximized = is_window_maximized();
+        
+        base.unmap();
+    }
+    
+    public override bool configure_event(Gdk.EventConfigure event) {
+        // don't directly write to GSettings as these events can come in fast and furious,
+        // wait for unmap() to write them out
+        window_width = event.width;
+        window_height = event.height;
+        
+        return base.configure_event(event);
+    }
+    
+    // only allow known stack children ids through
+    private bool transform_setting_to_calendar_view(Binding binding, Value source, ref Value target) {
+        if (!view_stack_ids.contains(source.get_string()))
+            return false;
+        
+        target = source;
+        
+        return true;
     }
     
     private void add_controller(View.Controllable controller) {
-        view_stack.add_titled(controller.get_container(), controller.title, controller.title);
+        view_stack_ids.add(controller.id);
+        view_stack.add_titled(controller.get_container(), controller.id, controller.title);
         controller.get_container().show_all();
     }
     
@@ -237,22 +357,7 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
     
     private void on_quick_create_event() {
-        QuickCreateEvent quick_create = new QuickCreateEvent();
-        
-        quick_create.success.connect(() => {
-            if (quick_create.parsed_event == null)
-                return;
-            
-            if (quick_create.parsed_event.is_valid())
-                create_event_async.begin(quick_create.parsed_event, null);
-            else
-                create_event(quick_create.parsed_event, quick_add_button, null);
-        });
-        
-        Toolkit.Deck deck = new Toolkit.Deck();
-        deck.add_cards(iterate<Toolkit.Card>(quick_create).to_array_list());
-        
-        show_deck(quick_add_button, null, deck);
+        quick_create_event(null, quick_add_button, null);
     }
     
     private void on_jump_to_today() {
@@ -275,42 +380,58 @@ public class MainWindow : Gtk.ApplicationWindow {
         view_stack.set_visible_child(week_view.get_container());
     }
     
+    private void on_increase_font() {
+        Settings.instance.small_font_pts++;
+        Settings.instance.normal_font_pts++;
+    }
+    
+    private void on_decrease_font() {
+        Settings.instance.small_font_pts--;
+        Settings.instance.normal_font_pts--;
+    }
+    
+    private void on_reset_font() {
+        Settings.instance.small_font_pts = View.Palette.DEFAULT_SMALL_FONT_PTS;
+        Settings.instance.normal_font_pts = View.Palette.DEFAULT_NORMAL_FONT_PTS;
+    }
+    
+    private void on_font_size_changed() {
+        ((SimpleAction) lookup_action(ACTION_INCREASE_FONT)).set_enabled(
+            Settings.instance.small_font_pts < View.Palette.MAX_SMALL_FONT_PTS
+            && Settings.instance.normal_font_pts < View.Palette.MAX_NORMAL_FONT_PTS);
+        ((SimpleAction) lookup_action(ACTION_DECREASE_FONT)).set_enabled(
+            Settings.instance.small_font_pts > View.Palette.MIN_SMALL_FONT_PTS
+            && Settings.instance.normal_font_pts > View.Palette.MIN_NORMAL_FONT_PTS);
+        ((SimpleAction) lookup_action(ACTION_RESET_FONT)).set_enabled(
+            Settings.instance.small_font_pts != View.Palette.DEFAULT_SMALL_FONT_PTS
+            && Settings.instance.normal_font_pts != View.Palette.DEFAULT_NORMAL_FONT_PTS);
+    }
+    
     private void on_request_create_timed_event(Calendar.ExactTimeSpan initial, Gtk.Widget relative_to,
         Gdk.Point? for_location) {
         Component.Event event = new Component.Event.blank();
         event.set_event_exact_time_span(initial);
         
-        create_event(event, relative_to, for_location);
+        quick_create_event(event, relative_to, for_location);
     }
     
-    private void on_request_create_all_day_event(Calendar.DateSpan initial, Gtk.Widget relative_to,
+    private void on_request_create_all_day_event(Calendar.Span initial, Gtk.Widget relative_to,
         Gdk.Point? for_location) {
         Component.Event event = new Component.Event.blank();
-        event.set_event_date_span(initial);
+        event.set_event_date_span(initial.to_date_span());
         
-        create_event(event, relative_to, for_location);
+        quick_create_event(event, relative_to, for_location);
     }
     
-    private void create_event(Component.Event event, Gtk.Widget relative_to, Gdk.Point? for_location) {
-        CreateUpdateEvent create_update_event = new CreateUpdateEvent();
-        create_update_event.is_update = false;
+    private void quick_create_event(Component.Event? initial, Gtk.Widget relative_to, Gdk.Point? for_location) {
+        QuickCreateEvent quick_create = new QuickCreateEvent(initial);
+        CreateUpdateEvent create_update = new CreateUpdateEvent();
+        create_update.is_update = false;
         
         Toolkit.Deck deck = new Toolkit.Deck();
-        deck.add_cards(iterate<Toolkit.Card>(create_update_event).to_array_list());
-        deck.go_home(event);
+        deck.add_cards(iterate<Toolkit.Card>(quick_create, create_update).to_array_list());
         
         show_deck(relative_to, for_location, deck);
-    }
-    
-    private async void create_event_async(Component.Event event, Cancellable? cancellable) {
-        if (event.calendar_source == null)
-            return;
-        
-        try {
-            yield event.calendar_source.create_component_async(event, cancellable);
-        } catch (Error err) {
-            debug("Unable to create event: %s", err.message);
-        }
     }
     
     private void on_request_display_event(Component.Event event, Gtk.Widget relative_to,

@@ -1,3 +1,11 @@
+california (0.1.1-1~saucy1) saucy; urgency=low
+
+  * Added week view.
+  * Rename calendars in the calendar manager.
+
+ -- Jim Nelson <jim@yorba.org>  Fri, 23 May 2014 16:07:39 -0700
+
+
 california (0.1.0-1~saucy1) saucy; urgency=low
 
   * First unstable release.

@@ -186,8 +186,19 @@ public class WallTime : BaseObject, Gee.Comparable<WallTime>, Gee.Hashable<WallT
                 m = int.parse(token.slice(2, 4));
             }
             
-            if (!meridiem_unknown && pm)
+            // only convert 12hr -> 24hr if meridiem is known, is PM, and not 12pm (which is 12
+            // in 24-hour time as well)
+            if (!meridiem_unknown && pm && h != 12)
                 h += 12;
+            
+            // accept "24:00" or "2400" as midnight
+            if (h == 24 && m == 0)
+                h = 0;
+            
+            // basic bounds checking; WallTime ctor will clamp, but for parsing prefer to be a
+            // little strict in this case
+            if (h < MIN_HOUR || h > MAX_HOUR || m < MIN_MINUTE || m > MAX_MINUTE)
+                return null;
             
             strictly_parsed = true;
             
@@ -195,10 +206,18 @@ public class WallTime : BaseObject, Gee.Comparable<WallTime>, Gee.Hashable<WallT
         }
         
         // otherwise, treat as short-form 12-hour time (even if meridiem is unknown, i.e. "8" is
-        // treated as "8:00am"
+        // treated as "8:00am" ... 12pm is 12 in 24-hour clock
         int h = int.parse(token);
-        if (!meridiem_unknown && pm)
+        if (!meridiem_unknown && pm && h != 12)
             h += 12;
+        
+        // accept "24" as midnight
+        if (h == 24)
+            h = 0;
+        
+        // basic bounds checking to avoid WallTime ctor clamping
+        if (h < MIN_HOUR || h > MAX_HOUR)
+            return null;
         
         strictly_parsed = !meridiem_unknown;
         

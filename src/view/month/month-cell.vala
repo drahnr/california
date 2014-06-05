@@ -18,7 +18,7 @@ internal class Cell : Common.EventsCell {
     public int col { get; private set; }
     
     public Cell(Grid owner, Calendar.Date date, int row, int col) {
-        base (date, date.week_of(owner.first_of_week).to_date_span());
+        base (owner.owner.palette, date, date.week_of(owner.first_of_week).to_date_span());
         
         this.owner = owner;
         this.row = row;
@@ -48,7 +48,7 @@ internal class Cell : Common.EventsCell {
         int height = get_allocated_height();
         
         // draw border lines (creates grid effect)
-        Palette.prepare_hairline(ctx, Palette.instance.border);
+        Palette.prepare_hairline(ctx, palette.border);
         
         // only draw top line if on the top row
         if (row == 0) {
@@ -74,8 +74,8 @@ internal class Cell : Common.EventsCell {
     private void update_top_line() {
         top_line_text = date.day_of_month.informal_number;
         top_line_rgba = (date in owner.month_of_year)
-            ? Palette.instance.day_in_range
-            : Palette.instance.day_outside_range;
+            ? palette.day_in_range
+            : palette.day_outside_range;
     }
 }
 

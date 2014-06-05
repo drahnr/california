@@ -13,6 +13,8 @@ namespace California.View.Week {
 public class Controller : BaseObject, View.Controllable {
     public const string PROP_WEEK = "week";
     
+    public const string VIEW_ID = "week";
+    
     private const int CACHE_NEIGHBORS_COUNT = 4;
     
     private class ViewContainer : Gtk.Stack, View.Container {
@@ -28,6 +30,11 @@ public class Controller : BaseObject, View.Controllable {
      * The current week of the year being displayed.
      */
     public Calendar.Week week { get; private set; }
+    
+    /**
+     * @inheritDoc
+     */
+    public string id { get { return VIEW_ID; } }
     
     /**
      * @inheritDoc
@@ -49,11 +56,18 @@ public class Controller : BaseObject, View.Controllable {
      */
     public Calendar.FirstOfWeek first_of_week { get; set; }
     
+    /**
+     * {@link View.Palette} for the entire hosted view.
+     */
+    public View.Palette palette { get; private set; }
+    
     private ViewContainer stack;
     private Toolkit.StackModel<Calendar.Week> stack_model;
     private Calendar.WeekSpan cache_span;
     
-    public Controller() {
+    public Controller(View.Palette palette) {
+        this.palette = palette;
+        
         stack = new ViewContainer(this);
         stack.homogeneous = true;
         stack.transition_duration = Toolkit.SLOW_STACK_TRANSITION_DURATION_MSEC;
@@ -108,6 +122,13 @@ public class Controller : BaseObject, View.Controllable {
      * @inheritDoc
      */
     public void unselect_all() {
+        Grid? current = get_current_grid();
+        if (current != null)
+            current.unselect_all();
+    }
+    
+    private Grid? get_current_grid() {
+        return stack.get_visible_child() as Grid;
     }
     
     private Gtk.Widget model_presentation(Calendar.Week week, out string? id) {

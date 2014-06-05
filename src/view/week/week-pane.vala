@@ -9,7 +9,16 @@ namespace California.View.Week {
 internal abstract class Pane : Gtk.EventBox {
     public weak Grid owner { get; private set; }
     
-    // The height of each "line" of text, including top and bottom padding
+    /**
+     * {@link View.Palette} for the {@link Pane}.
+     *
+     * The palette should be associated with the Gtk.Window hosting the Pane.
+     */
+    public View.Palette palette { get; private set; }
+    
+    /**
+     * The height of each "line" of text, including top and bottom padding
+     */
     protected int line_height_px { get; private set; default = 0; }
     
     private int requested_width;
@@ -17,6 +26,7 @@ internal abstract class Pane : Gtk.EventBox {
     
     public Pane(Grid owner, int requested_width) {
         this.owner = owner;
+        palette = owner.owner.palette;
         this.requested_width = requested_width;
         
         margin = 0;
@@ -24,19 +34,19 @@ internal abstract class Pane : Gtk.EventBox {
         add(canvas);
         
         update_palette_metrics();
-        Palette.instance.palette_changed.connect(on_palette_changed);
+        palette.palette_changed.connect(on_palette_changed);
         
         canvas.draw.connect(on_draw);
     }
     
     ~Pane() {
-        Palette.instance.palette_changed.disconnect(on_palette_changed);
+        palette.palette_changed.disconnect(on_palette_changed);
     }
     
     private void update_palette_metrics() {
         // calculate the amount of space each "line" gets when drawing (normal font height plus
         // padding on top and bottom)
-        line_height_px = Palette.instance.normal_font_height_px + (Palette.LINE_PADDING_PX * 2);
+        line_height_px = palette.normal_font_height_px + (Palette.LINE_PADDING_PX * 2);
         
         // update the height request based on the number of lines needed to show the entire day
         canvas.set_size_request(requested_width, get_line_y(Calendar.WallTime.latest));
@@ -55,7 +65,7 @@ internal abstract class Pane : Gtk.EventBox {
         ctx.save();
         
         // draw right-side border line
-        Palette.prepare_hairline(ctx, Palette.instance.border);
+        Palette.prepare_hairline(ctx, palette.border);
         ctx.move_to(width, 0);
         ctx.line_to(width, height);
         ctx.line_to(0, height);
@@ -73,9 +83,9 @@ internal abstract class Pane : Gtk.EventBox {
             
             // solid line on the hour, dashed on the half-hour
             if (wall_time.minute == 0)
-                Palette.prepare_hairline(ctx, Palette.instance.border);
+                Palette.prepare_hairline(ctx, palette.border);
             else
-                Palette.prepare_hairline_dashed(ctx, Palette.instance.border);
+                Palette.prepare_hairline_dashed(ctx, palette.border);
             
             ctx.move_to(0, line_y);
             ctx.line_to(width, line_y);

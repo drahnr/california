@@ -20,10 +20,6 @@ namespace California.Toolkit {
  */
 
 public abstract class EventConnector : BaseObject {
-    // helper consts for subclasses
-    protected const bool EVENT_PROPAGATE = false;
-    protected const bool EVENT_STOP = true;
-    
     private Gdk.EventMask event_mask;
     private Gee.HashSet<Gtk.Widget> widgets = new Gee.HashSet<Gtk.Widget>();
     

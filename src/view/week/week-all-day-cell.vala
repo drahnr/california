@@ -20,18 +20,18 @@ internal class AllDayCell : Common.EventsCell {
     public Grid owner { get; private set; }
     
     public AllDayCell(Grid owner, Calendar.Date date) {
-        base (date, date.week_of(owner.owner.first_of_week).to_date_span());
+        base (owner.owner.palette, date, date.week_of(owner.owner.first_of_week).to_date_span());
         
         this.owner = owner;
         
-        Palette.instance.palette_changed.connect(on_palette_changed);
+        palette.palette_changed.connect(on_palette_changed);
         
         // use for initialization
         on_palette_changed();
     }
     
     ~AllDayCell() {
-        Palette.instance.palette_changed.disconnect(on_palette_changed);
+        palette.palette_changed.disconnect(on_palette_changed);
     }
     
     protected override Common.EventsCell? get_cell_for_date(Calendar.Date cell_date) {
@@ -40,7 +40,7 @@ internal class AllDayCell : Common.EventsCell {
     
     private void on_palette_changed() {
         // set fixed size for cell, as it won't grow with the toplevel window
-        set_size_request(-1, (Palette.instance.small_font_height_px + Palette.LINE_PADDING_PX) * LINES_SHOWN);
+        set_size_request(-1, (palette.small_font_height_px + Palette.LINE_PADDING_PX) * LINES_SHOWN);
     }
     
     protected override void draw_borders(Cairo.Context ctx) {
@@ -48,7 +48,7 @@ internal class AllDayCell : Common.EventsCell {
         int height = get_allocated_height();
         
         // draw border lines (creates grid effect)
-        Palette.prepare_hairline(ctx, Palette.instance.border);
+        Palette.prepare_hairline(ctx, palette.border);
         
         // draw right border, unless last one in row, in which case spacer deals with that
         if (date.equal_to(neighbors.end_date)) {

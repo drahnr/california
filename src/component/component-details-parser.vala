@@ -9,7 +9,7 @@ namespace California.Component {
 /**
  * Parse the details of a user-entered string into an {@link Event}.
  *
- * DetailsParser makes no claims of natural language parsing or interpretation.  It merely
+ * DetailsParser makes no claims of advanced natural language parsing or interpretation.  It merely
  * looks for keywords and patterns within the tokenized stream and guesses what Event details
  * they refer to.
  *
@@ -51,7 +51,7 @@ public class DetailsParser : BaseObject {
     /**
      * The generated {@link Event}.
      */
-    public Component.Event event { get; private set; default = new Component.Event.blank(); }
+    public Component.Event event { get; private set; }
     
     private Collection.LookaheadStack<Token> stack;
     private StringBuilder summary = new StringBuilder();
@@ -66,17 +66,49 @@ public class DetailsParser : BaseObject {
     private bool adding_location = false;
     
     /**
-     * Parses a user-entered string of {@link Event} details into an Event.
+     * Parses a user-entered string of event details into an {@link Event}.
      *
-     * This always generates an Event, but very little in it may be available.  Its backup case
+     * This always generates an Event, but very little in it may be prepared.  Its backup case
      * is to use the details string as a summary and leave all other fields empty.  The caller
      * should complete the other fields to generate a valid VEVENT.
      *
+     * If the caller wishes to "pre-fill" the Event with certain details, it can supply an Event
+     * that will be used for initial values.  This will have an effect on the parser; in particular,
+     * with those details pre-filled in, values detected in the parsed string that would normally
+     * be used in their place will be dropped.  In other words, adding initial values will remove
+     * what the user can then add in their own string.
+     *
+     * The {@link details} supplied by the user are stored in {@link Event.description} verbatim.
+     *
      * If the details string is empty, a blank Event is generated.
      */
-    public DetailsParser(string? details, Backing.CalendarSource? calendar_source) {
+    public DetailsParser(string? details, Backing.CalendarSource? calendar_source, Event? initial = null) {
+        event = initial ?? new Component.Event.blank();
         event.calendar_source = calendar_source;
         this.details = details ?? "";
+        
+        // pull out details from the initial Event and add to the local state, which is then
+        // supplanted (but not replaced) by parsed information
+        if (initial != null) {
+            if (!String.is_empty(initial.summary))
+                summary.append(initial.summary.strip());
+            
+            if (!String.is_empty(initial.location))
+                location.append(initial.location.strip());
+            
+            if (event.is_all_day) {
+                start_date = event.date_span.start_date;
+                end_date = event.date_span.end_date;
+            } else if (event.exact_time_span != null) {
+                start_date = event.exact_time_span.start_date;
+                start_time = event.exact_time_span.start_exact_time.to_wall_time();
+                start_time_strict = true;
+                
+                end_date = event.exact_time_span.end_date;
+                end_time = event.exact_time_span.end_exact_time.to_wall_time();
+                end_time_strict = true;
+            }
+        }
         
         // tokenize the string and arrange as a stack for the parser
         string[] tokenized = String.reduce_whitespace(this.details).split(" ");
@@ -179,9 +211,13 @@ public class DetailsParser : BaseObject {
             }
         }
         
-        // if no start date was described but a start time was, assume for today
-        if (start_date == null && start_time != null)
+        // if no start date was described but a start time was, assume for today *unless* midnight
+        // was specified, in which case, tomorrow
+        if (start_date == null && start_time != null) {
             start_date = Calendar.System.today;
+            if (start_time.equal_to(Calendar.WallTime.earliest))
+                start_date = start_date.next();
+        }
         
         // if no end date was describe, assume ends today as well (unless midnight was crossed
         // due to duration)
@@ -213,7 +249,10 @@ public class DetailsParser : BaseObject {
             event.location = location.str;
         
         // store full detail text in the event description for user and for debugging
-        event.description = details;
+        if (String.is_empty(event.description))
+            event.description = details;
+        else
+            event.description += "\n" + details;
     }
     
     private bool parse_time(Token? specifier, bool strict) {
@@ -343,21 +382,8 @@ public class DetailsParser : BaseObject {
         
         // attempt to parse into day of the week
         Calendar.DayOfWeek? dow = Calendar.DayOfWeek.parse(token.casefolded);
-        if (dow == null)
-            return null;
         
-        // find a Date for day of the week ... starting today, move forward up to one
-        // week
-        Calendar.Date upcoming = Calendar.System.today;
-        Calendar.Date next_week = upcoming.adjust_by(1, Calendar.DateUnit.WEEK);
-        do {
-            if (upcoming.day_of_week.equal_to(dow))
-                return upcoming;
-            
-            upcoming = upcoming.next();
-        } while (!upcoming.equal_to(next_week));
-        
-        return null;
+        return (dow != null) ? Calendar.System.today.upcoming(dow, true) : null;
     }
     
     // Parses potential date specifiers into a specific calendar date

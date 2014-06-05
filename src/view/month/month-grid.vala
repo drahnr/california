@@ -388,18 +388,8 @@ private class Grid : Gtk.Grid {
         if (release_cell.get_event_at(release_cell_point) != null)
             return; // true;
         
-        // TODO: Define default time better
-        Calendar.ExactTime start;
-        if(release_cell.date.equal_to(Calendar.System.today)) {
-            start = new Calendar.ExactTime.now(Calendar.Timezone.local);
-        } else {
-            start = new Calendar.ExactTime(Calendar.Timezone.local, release_cell.date,
-                new Calendar.WallTime(13, 0, 0));
-        }
-        
-        Calendar.ExactTime end = start.adjust_time(1, Calendar.TimeUnit.HOUR);
-        
-        owner.request_create_timed_event(new Calendar.ExactTimeSpan(start, end), release_cell, release_cell_point);
+        owner.request_create_all_day_event(new Calendar.DateSpan(press_cell.date, release_cell.date),
+            release_cell, release_cell_point);
         
         // stop propagation
         //return true;
@@ -421,15 +411,11 @@ private class Grid : Gtk.Grid {
         if (hover_cell == null || hover_cell == press_cell)
             return false;
         
-        // both must have dates as well
-        if (press_cell.date == null || hover_cell.date == null)
-            return false;
-        
         // mark two cells and all in-between as selected, being sure to mark any previous selected
         // as unselected
         Calendar.DateSpan span = new Calendar.DateSpan(press_cell.date, hover_cell.date);
         foreach_cell((cell) => {
-            cell.selected = (cell.date != null) ? cell.date in span : false;
+            cell.selected = cell.date in span;
             
             return true;
         });

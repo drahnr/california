@@ -7,7 +7,8 @@
 namespace California.View {
 
 /**
- * A singleton holding colors and theme information for drawing the various views.
+ * A "bag" of properties and constants holding colors and theme information for drawing the various
+ * views to a particular Gtk.Window.
  *
  * TODO: Currently colors are hard-coded.  In the future we'll probably need to get these from the
  * system or the theme.
@@ -34,10 +35,39 @@ public class Palette : BaseObject {
      */
     public const double DASHES[] = { 1.0, 3.0 };
     
-    private const int NORMAL_FONT_SIZE_PT = 11;
-    private const int SMALL_FONT_SIZE_PT = 8;
+    /**
+     * Minimum size (in points) of the {@link small_font}.
+     */
+    public const int MIN_SMALL_FONT_PTS = 7;
     
-    public static Palette instance { get; private set; }
+    /**
+     * Maximum size (in points) of the {@link small_font}.
+     */
+    public const int MAX_SMALL_FONT_PTS = 14;
+    
+    /**
+     * Default size (in points) of the {@link small_font}.
+     *
+     * This is also set in the GSettings schema file.
+     */
+    public const int DEFAULT_SMALL_FONT_PTS = 8;
+    
+    /**
+     * Minimum size (in points) of the {@link normal_font}.
+     */
+    public const int MIN_NORMAL_FONT_PTS = 9;
+    
+    /**
+     * Maximum size (in points) of the {@link normal_font}.
+     */
+    public const int MAX_NORMAL_FONT_PTS = 16;
+    
+    /**
+     * Default size (in points) of the {@link normal_font}.
+     *
+     * This is also set in the GSettings schema file.
+     */
+    public const int DEFAULT_NORMAL_FONT_PTS = 11;
     
     /**
      * Border color (when separating days, for example).
@@ -117,7 +147,11 @@ public class Palette : BaseObject {
      */
     public signal void palette_changed();
     
-    private Palette() {
+    private unowned Gtk.Window window;
+    
+    public Palette(Gtk.Window window) {
+        this.window = window;
+        
         border = { red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0 };
         day_in_range = { red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0 };
         day_outside_range = { red: 0.6, green: 0.6, blue: 0.6, alpha: 1.0 };
@@ -125,47 +159,77 @@ public class Palette : BaseObject {
         current_time = { red: 1.0, green: 0.0, blue: 0.0, alpha: 0.90 };
         selection = { red: 0.0, green: 0.50, blue: 0.50, alpha: 0.10 };
         
-        normal_font = new Pango.FontDescription();
-        normal_font.set_size(NORMAL_FONT_SIZE_PT * Pango.SCALE);
+        Settings.instance.notify[Settings.PROP_NORMAL_FONT_PTS].connect(on_normal_font_changed);
+        Settings.instance.notify[Settings.PROP_SMALL_FONT_PTS].connect(on_small_font_changed);
         
-        small_font = new Pango.FontDescription();
-        small_font.set_size(SMALL_FONT_SIZE_PT * Pango.SCALE);
+        window.map.connect(on_window_mapped);
     }
     
-    internal static void init() {
-        instance = new Palette();
-    }
-    
-    internal static void terminate() {
-        instance = null;
-    }
-    
-    /**
-     * Called by {@link Host.MainWindow} when it's mapped to the screen.
-     *
-     * This allows for {@link Palette} to retrieve display metrics and other information.
-     */
-    public void main_window_mapped(Gtk.Window window) {
-        bool updated = false;
+    ~Palette() {
+        Settings.instance.notify[Settings.PROP_NORMAL_FONT_PTS].disconnect(on_normal_font_changed);
+        Settings.instance.notify[Settings.PROP_SMALL_FONT_PTS].disconnect(on_small_font_changed);
         
-        int height = get_height_extent(window, normal_font);
-        if (height != normal_font_height_px) {
-            normal_font_height_px = height;
-            updated = true;
+        window.map.disconnect(on_window_mapped);
+    }
+    
+    // Font extents can only be determined when the window is mapped
+    private void on_window_mapped() {
+        on_normal_font_changed();
+        on_small_font_changed();
+        palette_changed();
+    }
+    
+    private void on_normal_font_changed() {
+        Pango.FontDescription? new_normal_font;
+        int new_normal_height_px;
+        if (!on_font_changed(Settings.instance.normal_font_pts, normal_font, normal_font_height_px,
+            out new_normal_font, out new_normal_height_px)) {
+            // nothing changed
+            return;
         }
         
-        height = get_height_extent(window, small_font);
-        if (height != small_font_height_px) {
-            small_font_height_px = height;
-            updated = true;
-        }
+        normal_font = new_normal_font;
+        normal_font_height_px = new_normal_height_px;
         
-        if (updated)
-            palette_changed();
+        palette_changed();
     }
     
-    private static int get_height_extent(Gtk.Widget widget, Pango.FontDescription font) {
-        Pango.Layout layout = widget.create_pango_layout("Gg");
+    private void on_small_font_changed() {
+        Pango.FontDescription? new_small_font;
+        int new_small_height_px;
+        if (!on_font_changed(Settings.instance.small_font_pts, small_font, small_font_height_px,
+            out new_small_font, out new_small_height_px)) {
+            // nothing changed
+            return;
+        }
+        
+        small_font = new_small_font;
+        small_font_height_px = new_small_height_px;
+        
+        palette_changed();
+    }
+    
+    private bool on_font_changed(int new_pts, Pango.FontDescription? current_font,
+        int current_height_px, out Pango.FontDescription? new_font, out int new_height_px) {
+        Pango.FontDescription font = new Pango.FontDescription();
+        font.set_size(new_pts * Pango.SCALE);
+        
+        // if nothing changed, do nothing
+        if (current_font != null && current_font.get_size() == font.get_size()) {
+            new_font = current_font;
+            new_height_px = current_height_px;
+            
+            return false;
+        }
+        
+        new_font = font;
+        new_height_px = get_height_extent(font);
+        
+        return true;
+    }
+    
+    private int get_height_extent(Pango.FontDescription font) {
+        Pango.Layout layout = window.create_pango_layout("Gg");
         layout.set_font_description(font);
         
         int width, height;

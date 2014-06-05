@@ -1,4 +1,4 @@
-AC_INIT([california], [0.1.0], [jim@yorba.org], [california])
+AC_INIT([california], [0.1.1], [jim@yorba.org], [california])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS([config/config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -31,6 +31,7 @@ ECAL_REQUIRED=3.8.5
 LIBSOUP_REQUIRED=2.44
 GDATA_REQUIRED=0.14.0
 GOA_REQUIRED=3.8.3
+GOBJECT_INTROSPECTION_REQUIRED=1.38.0
 
 PKG_CHECK_MODULES(CALIFORNIA, [
 	glib-2.0 >= $GLIB_REQUIRED
@@ -41,9 +42,12 @@ PKG_CHECK_MODULES(CALIFORNIA, [
 	libsoup-2.4 >= $LIBSOUP_REQUIRED
 	libgdata >= $GDATA_REQUIRED
 	goa-1.0 >= $GOA_REQUIRED
+	gobject-introspection-1.0 >= $GOBJECT_INTROSPECTION_REQUIRED
 ])
 AC_SUBST(CALIFORNIA_CFLAGS)
 AC_SUBST(CALIFORNIA_LIBS)
+
+GLIB_GSETTINGS
 
 #
 # configure switches

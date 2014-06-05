@@ -25,6 +25,8 @@ EXTRA_DIST = \
 	intltool-update.in\
 	$(NULL)
 
+BUILT_SOURCES =
+
 CLEANFILES =
 
 DISTCLEANFILES = \

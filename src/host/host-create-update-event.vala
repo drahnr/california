@@ -47,6 +47,12 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     private Gtk.CheckButton all_day_toggle;
     
     [GtkChild]
+    private Gtk.Entry location_entry;
+    
+    [GtkChild]
+    private Gtk.TextView description_textview;
+    
+    [GtkChild]
     private Gtk.ComboBoxText calendar_combo;
     
     [GtkChild]
@@ -180,6 +186,9 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             is_update = false;
         }
         
+        location_entry.text = event.location ?? "";
+        description_textview.buffer.text = event.description ?? "";
+        
         accept_button.label = is_update ? _("_Update") : _("C_reate");
         original_calendar_source = event.calendar_source;
     }
@@ -228,6 +237,8 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         
         event.calendar_source = calendar_model.active;
         event.summary = summary_entry.text;
+        event.location = location_entry.text;
+        event.description = description_textview.buffer.text;
         
         if (all_day_toggle.active) {
             event.set_event_date_span(selected_date_span);
@@ -250,8 +261,6 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             update_event_async.begin(null);
         else
             create_event_async.begin(null);
-        
-        notify_success();
     }
     
     [GtkCallback]
@@ -260,8 +269,11 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     private async void create_event_async(Cancellable? cancellable) {
-        if (event.calendar_source == null)
+        if (event.calendar_source == null) {
+            notify_failure(_("Unable to create event: calendar must be specified"));
+            
             return;
+        }
         
         try {
             yield event.calendar_source.create_component_async(event, cancellable);
@@ -273,8 +285,11 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     
     // TODO: Delete from original source if not the same as the new source
     private async void update_event_async(Cancellable? cancellable) {
-        if (event.calendar_source == null)
+        if (event.calendar_source == null) {
+            notify_failure(_("Unable to update event: calendar must be specified"));
+            
             return;
+        }
         
         try {
             yield event.calendar_source.update_component_async(event, cancellable);

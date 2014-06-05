@@ -32,8 +32,10 @@ public T load<T>(string resource, string object_name, string path = DEFAULT_PATH
     if (object == null)
         error("Unable to load object \"%s\" from %s: not found", object_name, fullpath);
     
-    if (!object.get_type().is_a(typeof(T)))
-        error("Unable to load object \"%s\" from %s: not of type", object_name, fullpath);
+    if (!object.get_type().is_a(typeof(T))) {
+        error("Unable to load object \"%s\" from %s: not of type %s (is %s)", object_name, fullpath,
+            typeof(T).name(), object.get_type().name());
+    }
     
     return object;
 }

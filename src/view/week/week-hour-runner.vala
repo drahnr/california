@@ -31,14 +31,14 @@ internal class HourRunner : Pane {
         int right_justify_px = get_allocated_width() - Palette.TEXT_MARGIN_PX;
         
         // draw hours in the border color
-        Gdk.cairo_set_source_rgba(ctx, Palette.instance.border);
+        Gdk.cairo_set_source_rgba(ctx, palette.border);
         
         // draw time-of-day down right-hand side of HourRunner pane, which acts as tick marks for
         // the rest of the week view
         Calendar.WallTime wall_time = Calendar.WallTime.earliest;
         for (;;) {
             Pango.Layout layout = create_pango_layout(wall_time.to_pretty_string(TIME_FLAGS));
-            layout.set_font_description(Palette.instance.small_font);
+            layout.set_font_description(palette.small_font);
             layout.set_width(right_justify_px);
             layout.set_alignment(Pango.Alignment.RIGHT);
             

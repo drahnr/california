@@ -18,8 +18,6 @@ public void init() throws Error {
     if (!Unit.do_init(ref init_count))
         return;
     
-    Palette.init();
-    
     // subunit initialization
     View.Common.init();
     View.Month.init();
@@ -33,8 +31,6 @@ public void terminate() {
     View.Week.terminate();
     View.Month.terminate();
     View.Common.terminate();
-    
-    Palette.terminate();
 }
 
 }

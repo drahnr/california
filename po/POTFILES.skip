@@ -8,9 +8,13 @@ src/application/california-commandline.c
 src/calendar/calendar.c
 src/calendar/calendar-date.c
 src/component/component.c
+src/component/component-event.c
 src/host/host-create-update-event.c
 src/host/host-import-calendar.c
 src/host/host-main-window.c
+src/host/host-quick-create-event.c
 src/host/host-show-event.c
 src/manager/manager-calendar-list-item.c
+src/view/month/month-controller.c
+src/view/week/week-controller.c
 

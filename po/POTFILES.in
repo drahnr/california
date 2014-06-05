@@ -27,3 +27,5 @@ src/view/week/week-controller.vala
 [type: gettext/glade]src/rc/quick-create-event.ui
 [type: gettext/glade]src/rc/show-event.ui
 [type: gettext/glade]src/rc/webcal-subscribe.ui
+[type: gettext/glade]src/rc/window-menu.interface
+

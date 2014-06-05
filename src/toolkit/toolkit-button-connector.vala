@@ -75,23 +75,22 @@ public class ButtonConnector : EventConnector {
         Gtk.Widget, InternalButtonEvent>();
     private Gee.HashMap<Gtk.Widget, InternalButtonEvent> tertiary_states = new Gee.HashMap<
         Gtk.Widget, InternalButtonEvent>();
-    private Cancellable cancellable = new Cancellable();
     
     /**
      * The "raw" "button-pressed" signal received by {@link ButtonConnector}.
      *
-     * Signal subscribers should cancel the Cancellable to prevent propagation of the event.
-     * This will prevent the various "clicked" signals from firing.
+     * Return {@link STOP} to prevent further propagation of the event.  This will prevent firing
+     * of synthesized signals, i.e. {@link clicked} and {@link double_clicked}.
      */
-    public signal void pressed(Gtk.Widget widget, Gdk.EventButton event, Cancellable cancellable);
+    public signal bool pressed(Gtk.Widget widget, Button button, Gdk.Point point, Gdk.EventType event_type);
     
     /**
      * The "raw" "button-released" signal received by {@link ButtonConnector}.
      *
-     * Signal subscribers should cancel the Cancellable to prevent propagation of the event.
-     * This will prevent the various "clicked" signals from firing.
+     * Return {@link STOP} to prevent further propagation of the event.  This will prevent firing
+     * of synthesized signals, i.e. {@link clicked} and {@link double_clicked}.
      */
-    public signal void released(Gtk.Widget widget, Gdk.EventButton event, Cancellable cancellable);
+    public signal bool released(Gtk.Widget widget, Button button, Gdk.Point point, Gdk.EventType event_type);
     
     /**
      * Fired when a button is pressed and released once.
@@ -137,10 +136,9 @@ public class ButtonConnector : EventConnector {
      *
      * @return {@link EVENT_STOP} or {@link EVENT_PROPAGATE}.
      */
-    protected virtual bool notify_pressed(Gtk.Widget widget, Gdk.EventButton event) {
-        pressed(widget, event, cancellable);
-        
-        return stop_propagation();
+    protected virtual bool notify_pressed(Gtk.Widget widget, Button button, Gdk.Point point,
+        Gdk.EventType event_type) {
+        return pressed(widget, button, point, event_type);
     }
     
     /**
@@ -149,10 +147,9 @@ public class ButtonConnector : EventConnector {
      *
      * @return {@link EVENT_STOP} or {@link EVENT_PROPAGATE}.
      */
-    protected virtual bool notify_released(Gtk.Widget widget, Gdk.EventButton event) {
-        released(widget, event, cancellable);
-        
-        return stop_propagation();
+    protected virtual bool notify_released(Gtk.Widget widget, Button button, Gdk.Point point,
+        Gdk.EventType event_type) {
+        return released(widget, button, point, event_type);
     }
     
     /**
@@ -200,17 +197,6 @@ public class ButtonConnector : EventConnector {
         tertiary_states.unset(widget);
     }
     
-    // Checks if the Cancellable has been cancelled, in which case return EVENT_STOP and replaces
-    // the Cancellable
-    private bool stop_propagation() {
-        if (!cancellable.is_cancelled())
-            return EVENT_PROPAGATE;
-        
-        cancellable = new Cancellable();
-        
-        return EVENT_STOP;
-    }
-    
     private Gee.HashMap<Gtk.Widget, InternalButtonEvent>? get_states_map(Button button) {
         switch (button) {
             case Button.PRIMARY:
@@ -231,7 +217,7 @@ public class ButtonConnector : EventConnector {
     }
     
     private bool on_button_event(Gtk.Widget widget, Gdk.EventButton event) {
-        Button button = Button.from_event(event);
+        Button button = Button.from_button_event(event);
         
         return process_button_event(widget, event, button, get_states_map(button));
     }
@@ -243,12 +229,13 @@ public class ButtonConnector : EventConnector {
             case Gdk.EventType.2BUTTON_PRESS:
             case Gdk.EventType.3BUTTON_PRESS:
                 // notify of raw event
-                if (notify_pressed(widget, event) == EVENT_STOP) {
+                Gdk.Point point = Gdk.Point() { x = (int) event.x, y = (int) event.y };
+                if (notify_pressed(widget, button, point, event.type) == Toolkit.STOP) {
                     // drop any lingering state
                     if (button_states != null)
                         button_states.unset(widget);
                     
-                    return EVENT_STOP;
+                    return Toolkit.STOP;
                 }
                 
                 // save state for the release event, potentially updating existing state from
@@ -268,12 +255,13 @@ public class ButtonConnector : EventConnector {
             
             case Gdk.EventType.BUTTON_RELEASE:
                 // notify of raw event
-                if (notify_released(widget, event) == EVENT_STOP) {
+                Gdk.Point point = Gdk.Point() { x = (int) event.x, y = (int) event.y };
+                if (notify_released(widget, button, point, event.type) == Toolkit.STOP) {
                     // release lingering state
                     if (button_states != null)
                         button_states.unset(widget);
                     
-                    return EVENT_STOP;
+                    return Toolkit.STOP;
                 }
                 
                 // update saved state (if any) with release info and start timer
@@ -303,7 +291,7 @@ public class ButtonConnector : EventConnector {
             break;
         }
         
-        return EVENT_PROPAGATE;
+        return Toolkit.PROPAGATE;
     }
     
     private void on_release_timeout(InternalButtonEvent details) {

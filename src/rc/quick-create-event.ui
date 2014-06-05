@@ -10,8 +10,9 @@
       <object class="GtkLabel" id="title_label">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="margin_bottom">8</property>
         <property name="xalign">0</property>
-        <property name="label" translatable="yes">_Quick add event:</property>
+        <property name="label" translatable="yes">_Quick add event</property>
         <property name="use_underline">True</property>
         <property name="mnemonic_widget">details_entry</property>
         <attributes>
@@ -29,7 +30,9 @@
       <object class="GtkButtonBox" id="buttonbox1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="valign">end</property>
         <property name="margin_top">8</property>
+        <property name="vexpand">True</property>
         <property name="spacing">8</property>
         <property name="homogeneous">True</property>
         <property name="layout_style">end</property>
@@ -71,6 +74,19 @@
       </object>
       <packing>
         <property name="left_attach">0</property>
+        <property name="top_attach">4</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBoxText" id="calendar_combo_box">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="margin_top">8</property>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
         <property name="top_attach">3</property>
         <property name="width">1</property>
         <property name="height">1</property>
@@ -102,9 +118,54 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="xalign">0</property>
-            <property name="label" translatable="yes">&lt;small&gt;&lt;i&gt;Example: Dinner at Tadich Grill 7:30pm tomorrow&lt;/i&gt;&lt;/small&gt;</property>
+            <property name="label">(empty)</property>
             <property name="use_markup">True</property>
             <property name="ellipsize">start</property>
+            <style>
+              <class name="dim-label"/>
+            </style>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">2</property>
+        <property name="width">1</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox" id="when_box">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="spacing">8</property>
+        <child>
+          <object class="GtkLabel" id="when_label">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">When</property>
+            <style>
+              <class name="dim-label"/>
+            </style>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="when_text_label">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="hexpand">True</property>
+            <property name="xalign">0</property>
+            <property name="label">(empty)</property>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -116,46 +177,6 @@
       <packing>
         <property name="left_attach">0</property>
         <property name="top_attach">1</property>
-        <property name="width">1</property>
-        <property name="height">1</property>
-      </packing>
-    </child>
-    <child>
-      <object class="GtkBox" id="box2">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="spacing">8</property>
-        <child>
-          <object class="GtkLabel" id="calendar_label">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="xalign">0</property>
-            <property name="label" translatable="yes">Ca_lendar:</property>
-            <property name="use_underline">True</property>
-            <property name="mnemonic_widget">calendar_combo_box</property>
-            <property name="ellipsize">start</property>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkComboBoxText" id="calendar_combo_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-          </object>
-          <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-      <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">2</property>
         <property name="width">1</property>
         <property name="height">1</property>
       </packing>

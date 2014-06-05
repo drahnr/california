@@ -20,7 +20,7 @@ public enum Button {
     /**
      * Converts the button field of a Gdk.EventButton to a {@link Button} enumeration.
      */
-    public static Button from_event(Gdk.EventButton event) {
+    public static Button from_button_event(Gdk.EventButton event) {
         switch (event.button) {
             case 1:
                 return PRIMARY;
@@ -33,6 +33,31 @@ public enum Button {
             
             default:
                 return OTHER;
+        }
+    }
+    
+    /**
+     * Returns the Gdk.ModifierType corresponding to this {@link Button}.
+     *
+     * {@link OTHER} merely means any button not {@link PRIMARY}, {@link SECONDARY}, or
+     * {@link TERTIARY}.
+     */
+    public Gdk.ModifierType get_modifier_mask() {
+        switch (this) {
+            case PRIMARY:
+                return Gdk.ModifierType.BUTTON1_MASK;
+            
+            case SECONDARY:
+                return Gdk.ModifierType.BUTTON2_MASK;
+            
+            case TERTIARY:
+                return Gdk.ModifierType.BUTTON3_MASK;
+            
+            case OTHER:
+                return Gdk.ModifierType.BUTTON4_MASK | Gdk.ModifierType.BUTTON5_MASK;
+            
+            default:
+                assert_not_reached();
         }
     }
 }
@@ -74,7 +99,7 @@ public class ButtonEvent : BaseObject {
     
     internal ButtonEvent(Gtk.Widget widget, Gdk.EventButton press_event) {
         this.widget = widget;
-        button = Button.from_event(press_event);
+        button = Button.from_button_event(press_event);
         press_type = press_event.type;
         _press_point.x = (int) press_event.x;
         _press_point.y = (int) press_event.y;
@@ -83,7 +108,7 @@ public class ButtonEvent : BaseObject {
     // Update state with the next button press
     internal virtual void update_press(Gtk.Widget widget, Gdk.EventButton press_event) {
         assert(this.widget == widget);
-        assert(Button.from_event(press_event) == button);
+        assert(Button.from_button_event(press_event) == button);
         
         press_type = press_event.type;
         _press_point.x = (int) press_event.x;
@@ -93,7 +118,7 @@ public class ButtonEvent : BaseObject {
     // Update state with the next button release and start the release timer
     internal virtual void update_release(Gtk.Widget widget, Gdk.EventButton release_event) {
         assert(this.widget == widget);
-        assert(Button.from_event(release_event) == button);
+        assert(Button.from_button_event(release_event) == button);
         
         _release_point.x = (int) release_event.x;
         _release_point.y = (int) release_event.y;

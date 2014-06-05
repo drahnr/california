@@ -1,0 +1,52 @@
+<schemalist>
+
+<schema id="org.yorba.california" path="/org/yorba/california/">
+    <key name="calendar-view" type="s">
+        <default>"month"</default>
+        <summary>Current calendar view</summary>
+        <description>
+            Legal values include "week" and "month".
+        </description>
+    </key>
+    
+    <key name="small-font-pts" type="i">
+        <default>8</default>
+        <summary>Size (in points) of small font</summary>
+        <description>
+            The small font is generally used where lots of detail is being displayed.
+        </description>
+    </key>
+    
+    <key name="normal-font-pts" type="i">
+        <default>11</default>
+        <summary>Size (in points) of normal font</summary>
+        <description>
+            The normal font is used where less details is being displayed, such as the day of the
+            month.
+        </description>
+    </key>
+    
+    <key name="window-width" type="i">
+        <default>1024</default>
+        <summary>Width of main window (in pixels)</summary>
+        <description>
+        </description>
+    </key>
+    
+    <key name="window-height" type="i">
+        <default>768</default>
+        <summary>Height of main window (in pixels)</summary>
+        <description>
+        </description>
+    </key>
+    
+    <key name="window-maximized" type="b">
+        <default>false</default>
+        <summary>true if the main window is maximized</summary>
+        <description>
+        </description>
+    </key>
+</schema>
+
+</schemalist>
+

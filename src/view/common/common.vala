@@ -15,14 +15,12 @@ public void init() throws Error {
     // unit initialization
     Calendar.init();
     Component.init();
-    Toolkit.init();
 }
 
 public void terminate() {
     if (!Unit.do_terminate(ref init_count))
         return;
     
-    Toolkit.terminate();
     Component.terminate();
     Calendar.terminate();
 }

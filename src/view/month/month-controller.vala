@@ -15,6 +15,9 @@ namespace California.View.Month {
 
 public class Controller : BaseObject, View.Controllable {
     public const string PROP_MONTH_OF_YEAR = "month-of-year";
+    public const string PROP_PALETTE = "palette";
+    
+    public const string VIEW_ID = "month";
     
     // number of Grids to keep in GtkStack and cache (in terms of months) ... this should be an
     // even number, as it is halved to determine neighboring months depths
@@ -45,6 +48,11 @@ public class Controller : BaseObject, View.Controllable {
     /**
      * @inheritDoc
      */
+    public string id { get { return VIEW_ID; } }
+    
+    /**
+     * @inheritDoc
+     */
     public string title { get { return _("Month"); } }
     
     /**
@@ -62,12 +70,19 @@ public class Controller : BaseObject, View.Controllable {
      */
     public Calendar.Date default_date { get; protected set; }
     
+    /**
+     * {@link View.Palette} for the entire view.
+     */
+    public View.Palette palette { get; private set; }
+    
     private MasterGrid master_grid;
     private Gtk.Stack stack = new Gtk.Stack();
     private Toolkit.StackModel<Calendar.MonthOfYear> stack_model;
     private Calendar.MonthSpan cache_span;
     
-    public Controller() {
+    public Controller(View.Palette palette) {
+        this.palette = palette;
+        
         master_grid = new MasterGrid(this);
         master_grid.column_homogeneous = true;
         master_grid.column_spacing = 0;

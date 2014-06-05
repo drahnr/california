@@ -80,7 +80,8 @@ public abstract class Unit<G> : Span, Collection.SimpleIterable<Date> {
     /**
      * Returns the number of {@link Unit}s between the two.
      *
-     * If the supplied Unit is earlier than this one, a negative value is returned.
+     * If the supplied Unit is earlier than this one, a negative value is returned.  (In other
+     * words, future days are positive, past days are negative.)
      */
     public abstract int difference(G other);
     
@@ -88,8 +89,7 @@ public abstract class Unit<G> : Span, Collection.SimpleIterable<Date> {
      * True if the {@link Unit} contains the specified {@link Date}.
      *
      * This is named to conform to Vala's rule for automatic syntax support.  This allows for the
-     * ''in'' operator to function on DiscreteUnits, but only for Dates (which is a common
-     * operation).
+     * ''in'' operator to function on Units, but only for Dates (which is a common operation).
      */
     public bool contains(Date date) {
         return has_date(date);
@@ -100,8 +100,8 @@ public abstract class Unit<G> : Span, Collection.SimpleIterable<Date> {
      * {@link Unit}'s span of time.
      *
      * This is named to conform to Vala's rule for automatic iterator support.  This allows for
-     * the ''foreach'' operator to function on DiscreteUnits, but only for Dates (which is a
-     * common operation).
+     * the ''foreach'' operator to function on Units, but only for Dates (which is a common
+     * operation).
      */
     public Collection.SimpleIterator<Date> iterator() {
         return date_iterator();

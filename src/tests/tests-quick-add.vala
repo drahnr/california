@@ -20,6 +20,11 @@ private class QuickAdd : UnitTest.Harness {
         add_case("dialog-example", dialog_example);
         add_case("noon", noon);
         add_case("midnight", midnight);
+        add_case("pm1230", pm1230);
+        add_case("bogus-time", bogus_time);
+        add_case("zero-hour", zero_hour);
+        add_case("oh-twenty-four-hours", oh_twenty_four_hours);
+        add_case("midnight-to-one", midnight_to_one);
     }
     
     protected override void setup() throws Error {
@@ -160,6 +165,73 @@ private class QuickAdd : UnitTest.Harness {
             new Calendar.WallTime(23, 0, 0));
         Calendar.ExactTime end = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
             new Calendar.WallTime(0, 0, 0));
+        
+        return parser.event.summary == "Dinner"
+            && parser.event.exact_time_span.start_exact_time.equal_to(start)
+            && parser.event.exact_time_span.end_exact_time.equal_to(end);
+    }
+    
+    private bool pm1230() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "12:30pm Friday Lunch with Eric and Charles", null);
+        
+        Calendar.Date friday = Calendar.System.today.upcoming(Calendar.DayOfWeek.FRI, true);
+        
+        Calendar.ExactTime start = new Calendar.ExactTime(Calendar.Timezone.local, friday,
+            new Calendar.WallTime(12, 30, 0));
+        Calendar.ExactTime end = new Calendar.ExactTime(Calendar.Timezone.local, friday,
+            new Calendar.WallTime(13, 30, 0));
+        
+        return parser.event.summary == "Lunch with Eric and Charles"
+            && parser.event.exact_time_span.start_exact_time.equal_to(start)
+            && parser.event.exact_time_span.end_exact_time.equal_to(end);
+    }
+    
+    private bool bogus_time() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Dinner 25:00", null);
+        
+        return parser.event.summary == "Dinner 25:00"
+            && parser.event.exact_time_span == null
+            && parser.event.date_span == null;
+    }
+    
+    private bool zero_hour() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Dinner 00:00", null);
+        
+        Calendar.ExactTime start = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
+            new Calendar.WallTime(0, 0, 0));
+        Calendar.ExactTime end = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
+            new Calendar.WallTime(1, 0, 0));
+        
+        return parser.event.summary == "Dinner"
+            && parser.event.exact_time_span.start_exact_time.equal_to(start)
+            && parser.event.exact_time_span.end_exact_time.equal_to(end);
+    }
+    
+    private bool oh_twenty_four_hours() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Dinner 24:00", null);
+        
+        Calendar.ExactTime start = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
+            new Calendar.WallTime(0, 0, 0));
+        Calendar.ExactTime end = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
+            new Calendar.WallTime(1, 0, 0));
+        
+        return parser.event.summary == "Dinner"
+            && parser.event.exact_time_span.start_exact_time.equal_to(start)
+            && parser.event.exact_time_span.end_exact_time.equal_to(end);
+    }
+    
+    private bool midnight_to_one() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Dinner midnight to 1am", null);
+        
+        Calendar.ExactTime start = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
+            new Calendar.WallTime(0, 0, 0));
+        Calendar.ExactTime end = new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today.next(),
+            new Calendar.WallTime(1, 0, 0));
         
         return parser.event.summary == "Dinner"
             && parser.event.exact_time_span.start_exact_time.equal_to(start)

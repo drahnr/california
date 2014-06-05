@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <menu id="window-menu">
+        <section>
+            <item>
+                <attribute name="label" translatable="yes">Zoom _In</attribute>
+                <attribute name="action">win.increase-font</attribute>
+            </item>
+            <item>
+                <attribute name="label" translatable="yes">Zoom _Out</attribute>
+                <attribute name="action">win.decrease-font</attribute>
+            </item>
+            <item>
+                <attribute name="label" translatable="yes">_Normal Size</attribute>
+                <attribute name="action">win.reset-font</attribute>
+            </item>
+        </section>
+        <section>
+            <item>
+                <attribute name="label" translatable="yes">_Quit</attribute>
+                <attribute name="action">app.quit</attribute>
+            </item>
+        </section>
+    </menu>
+</interface>
+

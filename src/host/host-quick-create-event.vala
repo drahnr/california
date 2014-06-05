@@ -14,14 +14,23 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
     
     public string? title { get { return null; } }
     
-    public Component.Event? parsed_event { get; private set; default = null; }
+    public new Component.Event? event { get; private set; default = null; }
     
     public Gtk.Widget? default_widget { get { return create_button; } }
     
     public Gtk.Widget? initial_focus { get { return details_entry; } }
     
     [GtkChild]
+    private Gtk.Box when_box;
+    
+    [GtkChild]
+    private Gtk.Label when_text_label;
+    
+    [GtkChild]
     private Gtk.Entry details_entry;
+    
+    [GtkChild]
+    private Gtk.Label example_label;
     
     [GtkChild]
     private Gtk.ComboBoxText calendar_combo_box;
@@ -31,7 +40,26 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
     
     private Toolkit.ComboBoxTextModel<Backing.CalendarSource> model;
     
-    public QuickCreateEvent() {
+    public QuickCreateEvent(Component.Event? initial) {
+        event = initial;
+        
+        // if initial date/times supplied, reveal to the user and change the example
+        string eg;
+        if (initial != null && (initial.date_span != null || initial.exact_time_span != null)) {
+            when_box.visible = true;
+            when_text_label.label = initial.get_event_time_pretty_string(Calendar.Timezone.local);
+            if (initial.date_span != null)
+                eg = _("Example: Dinner at Tadich Grill 7:30pm");
+            else
+                eg = _("Example: Dinner at Tadich Grill");
+        } else {
+            when_box.visible = false;
+            when_box.no_show_all = true;
+            eg = _("Example: Dinner at Tadich Grill 7:30pm tomorrow");
+        }
+
+        example_label.label = "<small><i>%s</i></small>".printf(eg);
+        
         // create and initialize combo box model
         model = new Toolkit.ComboBoxTextModel<Backing.CalendarSource>(calendar_combo_box,
             (cal) => cal.title);
@@ -46,15 +74,6 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
         
         // make first item active
         calendar_combo_box.active = 0;
-        
-        details_entry.bind_property("text-length", create_button, "sensitive", BindingFlags.SYNC_CREATE,
-            xform_text_length_to_sensitive);
-    }
-    
-    private bool xform_text_length_to_sensitive(Binding binding, Value source_value, ref Value target_value) {
-        target_value = !String.is_empty(details_entry.text);
-        
-        return true;
     }
     
     public void jumped_to(Toolkit.Card? from, Value? message) {
@@ -75,10 +94,45 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_create_button_clicked() {
-        Component.DetailsParser parser = new Component.DetailsParser(details_entry.text, model.active);
-        parsed_event = parser.event;
+        string details = details_entry.text.strip();
         
-        notify_success();
+        if (String.is_empty(details)) {
+            // jump to Create/Update dialog and remove this Card from the Deck ... this ensures
+            // that if the user presses Cancel in the Create/Update dialog the Deck exits rather
+            // than returns here (via jump_home_or_user_closed())
+            jump_to_card_by_name(CreateUpdateEvent.ID, null);
+            deck.remove_cards(iterate<Toolkit.Card>(this).to_array_list());
+            
+            return;
+        }
+        
+        Component.DetailsParser parser = new Component.DetailsParser(details, model.active,
+            event);
+        event = parser.event;
+        
+        if (event.is_valid()) {
+            create_event_async.begin(null);
+        } else {
+            // see note above about why the Deck jumps to Create/Update and then this Card is
+            // removed
+            jump_to_card_by_name(CreateUpdateEvent.ID, event);
+            deck.remove_cards(iterate<Toolkit.Card>(this).to_array_list());
+        }
+    }
+    
+    private async void create_event_async(Cancellable? cancellable) {
+        if (event.calendar_source == null) {
+            notify_failure(_("Unable to create event: calendar must be specified"));
+            
+            return;
+        }
+        
+        try {
+            yield event.calendar_source.create_component_async(event, cancellable);
+            notify_success();
+        } catch (Error err) {
+            notify_failure(_("Unable to create event: %s").printf(err.message));
+        }
     }
 }
 

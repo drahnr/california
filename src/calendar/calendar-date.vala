@@ -248,6 +248,44 @@ public class Date : Unit<Date>, Gee.Comparable<Date>, Gee.Hashable<Date> {
     }
     
     /**
+     * Returns the {@link Date} of the upcoming (next chronological) {@link DayOfWeek}.
+     *
+     * Set {@link includes_this_day} to true if this Date is to be considered "upcoming", that is,
+     * if it falls on the day of the week, it is returned.
+     *
+     * @see prior
+     */
+    public Date upcoming(DayOfWeek dow, bool includes_this_day) {
+        return upcoming_prior(dow, includes_this_day, 1);
+    }
+    
+    /**
+     * Returns the {@link Date} of the prior (previous chronological) {@link DayOfWeek}.
+     *
+     * Set {@link includes_this_day} to true if this Date is to be considered "prior", that is,
+     * if it falls on the day of the week, it is returned.
+     *
+     * @see upcoming
+     */
+    public Date prior(DayOfWeek dow, bool includes_this_day) {
+        return upcoming_prior(dow, includes_this_day, -1);
+    }
+    
+    private Date upcoming_prior(DayOfWeek dow, bool includes_this_day, int adjustment) {
+        // look for current date being the one
+        if (day_of_week.equal_to(dow) && includes_this_day)
+            return this;
+        
+        // find a Date for day of the week ... brute force isn't great, but it works
+        Date upcoming_prior = this;
+        for (;;) {
+            upcoming_prior = upcoming_prior.adjust(adjustment);
+            if (upcoming_prior.day_of_week.equal_to(dow))
+                return upcoming_prior;
+        }
+    }
+    
+    /**
      * @inheritDoc
      */
     public override int difference(Date other) {

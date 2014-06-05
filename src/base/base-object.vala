@@ -4,6 +4,10 @@
  * (version 2.1 or later).  See the COPYING file in this distribution.
  */
 
+// It's either this or double-unref Binding objects; see
+// https://bugzilla.gnome.org/show_bug.cgi?id=730967
+extern void g_binding_unbind(Binding *binding);
+
 namespace California {
 
 /**
@@ -12,6 +16,19 @@ namespace California {
 
 public abstract class BaseObject : Object {
     public BaseObject() {
+    }
+    
+    /**
+     * Helper for unbinding properties until g_binding_unbind() is bound.
+     *
+     * See [[https://bugzilla.gnome.org/show_bug.cgi?id=730967]]
+     */
+    public static void unbind_property(ref Binding? binding) {
+        if (binding == null)
+            return;
+        
+        g_binding_unbind(binding);
+        binding = null;
     }
     
     /**

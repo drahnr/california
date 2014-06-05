@@ -112,6 +112,25 @@
             <property name="position">5</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkCheckButton" id="all_day_toggle">
+            <property name="label" translatable="yes">_All-day</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">False</property>
+            <property name="halign">start</property>
+            <property name="use_underline">True</property>
+            <property name="xalign">0</property>
+            <property name="image_position">right</property>
+            <property name="draw_indicator">True</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">6</property>
+          </packing>
+        </child>
       </object>
       <packing>
         <property name="left_attach">0</property>
@@ -121,34 +140,108 @@
       </packing>
     </child>
     <child>
-      <object class="GtkBox" id="calendar_box">
+      <object class="GtkGrid" id="grid1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="spacing">8</property>
+        <property name="row_spacing">6</property>
+        <property name="column_spacing">6</property>
         <child>
-          <object class="GtkLabel" id="calendar_label">
+          <object class="GtkLabel" id="location_label">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="label" translatable="yes">Calendar:</property>
+            <property name="xalign">1</property>
+            <property name="label" translatable="yes">_Location</property>
+            <property name="use_underline">True</property>
+            <property name="mnemonic_widget">location_entry</property>
+            <property name="single_line_mode">True</property>
+            <style>
+              <class name="dim-label"/>
+            </style>
           </object>
           <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
           </packing>
         </child>
         <child>
-          <object class="GtkComboBoxText" id="calendar_combo">
+          <object class="GtkEntry" id="location_entry">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
+            <property name="can_focus">True</property>
           </object>
           <packing>
-            <property name="expand">True</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">1</property>
+            <property name="left_attach">1</property>
+            <property name="top_attach">0</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
           </packing>
         </child>
+        <child>
+          <object class="GtkLabel" id="description_label">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="xalign">1</property>
+            <property name="yalign">0</property>
+            <property name="label" translatable="yes">_Description</property>
+            <property name="use_underline">True</property>
+            <property name="wrap">True</property>
+            <property name="mnemonic_widget">description_textview</property>
+            <style>
+              <class name="dim-label"/>
+            </style>
+          </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">1</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="scrolledwindow1">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <property name="min_content_height">75</property>
+            <child>
+              <object class="GtkViewport" id="viewport1">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkTextView" id="description_textview">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="hexpand">True</property>
+                    <property name="vexpand">True</property>
+                    <property name="wrap_mode">word</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
+        </child>
+        <style>
+          <class name="dim-label"/>
+        </style>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
+        <property name="top_attach">2</property>
+        <property name="width">2</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkComboBoxText" id="calendar_combo">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
       </object>
       <packing>
         <property name="left_attach">0</property>
@@ -164,7 +257,7 @@
         <property name="valign">end</property>
         <property name="margin_top">8</property>
         <property name="vexpand">True</property>
-        <property name="spacing">8</property>
+        <property name="spacing">6</property>
         <property name="homogeneous">True</property>
         <property name="layout_style">end</property>
         <child>
@@ -213,28 +306,6 @@
         <property name="width">2</property>
         <property name="height">1</property>
       </packing>
-    </child>
-    <child>
-      <object class="GtkCheckButton" id="all_day_toggle">
-        <property name="label" translatable="yes">_All-day event</property>
-        <property name="visible">True</property>
-        <property name="can_focus">True</property>
-        <property name="receives_default">False</property>
-        <property name="halign">start</property>
-        <property name="use_underline">True</property>
-        <property name="xalign">0</property>
-        <property name="image_position">right</property>
-        <property name="draw_indicator">True</property>
-      </object>
-      <packing>
-        <property name="left_attach">0</property>
-        <property name="top_attach">2</property>
-        <property name="width">1</property>
-        <property name="height">1</property>
-      </packing>
-    </child>
-    <child>
-      <placeholder/>
     </child>
   </template>
 </interface>

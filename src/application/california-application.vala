@@ -32,10 +32,17 @@ public class Application : Gtk.Application {
     
     // public application menu actions; note their "app." prefix which does not
     // match the actions in the action_entries table
-    public const string ACTION_NEW_CALENDAR = "app.new-calendar";
-    public const string ACTION_CALENDAR_MANAGER = "app.calendar-manager";
-    public const string ACTION_ABOUT = "app.about";
-    public const string ACTION_QUIT = "app.quit";
+    public const string DETAILED_ACTION_NEW_CALENDAR = "app.new-calendar";
+    public const string ACTION_NEW_CALENDAR = "new-calendar";
+    
+    public const string DETAILED_ACTION_CALENDAR_MANAGER = "app.calendar-manager";
+    public const string ACTION_CALENDAR_MANAGER = "calendar-manager";
+    
+    public const string DETAILED_ACTION_ABOUT = "app.about";
+    public const string ACTION_ABOUT = "about";
+    
+    public const string DETAILED_ACTION_QUIT = "app.quit";
+    public const string ACTION_QUIT = "quit";
     
     // internal actions; no "app." prefix
     private const string ACTION_PROCESS_FILE = "process-file";
@@ -49,17 +56,59 @@ public class Application : Gtk.Application {
     
     private static const ActionEntry[] action_entries = {
         // public actions
-        { "new-calendar", on_new_calendar },
-        { "calendar-manager", on_calendar_manager },
-        { "about", on_about },
-        { "quit", on_quit },
+        { ACTION_NEW_CALENDAR, on_new_calendar },
+        { ACTION_CALENDAR_MANAGER, on_calendar_manager },
+        { ACTION_ABOUT, on_about },
+        { ACTION_QUIT, on_quit },
         
         // internal
         { ACTION_PROCESS_FILE, on_process_file, "s" }
     };
     
+    /**
+     * The executable's location on the filesystem.
+     *
+     * This will be null until {@link local_command_line} is executed.
+     */
+    public File? exec_file { get; private set; default = null; }
+    
+    /**
+     * The executable's parent directory on the filesystem.
+     *
+     * This will be null until {@link local_command_line} is executed.
+     */
+    public File? exec_dir { owned get { return (exec_file != null) ? exec_file.get_parent() : null; } }
+    
+    /**
+     * The configured prefix directory as a File.
+     */
+    public File prefix_dir { owned get { return File.new_for_path(PREFIX); } }
+    
+    /**
+     * Whether or not the running executable is the installed executable (if installed at all).
+     *
+     * False if {@link local_command_line} hasn't executed yet.
+     */
+    public bool is_installed {
+        get {
+            return (exec_dir != null) ? exec_dir.has_prefix(prefix_dir) : false;
+        }
+    }
+    
+    /**
+     * If not installed, returns the root of the build directory (which may not be the location
+     * of the main executable).
+     *
+     * null if {@link is_installed} is true.
+     */
+    public File? build_root_dir {
+        owned get {
+            // currently the build system stores the exec in the src/ directory
+            return (!is_installed && exec_dir != null) ? exec_dir.get_parent() : null;
+        }
+    }
+    
     private Host.MainWindow? main_window = null;
-    private File? exec_file = null;
     
     private Application() {
         Object (application_id: ID);
@@ -107,6 +156,7 @@ public class Application : Gtk.Application {
         
         // unit initialization
         try {
+            Settings.init();
             Host.init();
             Manager.init();
             Activator.init();
@@ -128,6 +178,7 @@ public class Application : Gtk.Application {
         Activator.terminate();
         Manager.terminate();
         Host.terminate();
+        Settings.terminate();
         
         base.shutdown();
     }
@@ -145,7 +196,9 @@ public class Application : Gtk.Application {
         base.activate();
     }
     
-    // Presents a modal error dialog to the user
+    /*
+     * Presents a modal error dialog to the user.
+     */
     public void error_message(string msg) {
         Gtk.MessageDialog dialog = new Gtk.MessageDialog(main_window, Gtk.DialogFlags.MODAL,
             Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, "%s", msg);

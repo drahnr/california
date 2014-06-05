@@ -25,6 +25,7 @@ california_VALASOURCES = \
 	application/california-application.vala \
 	application/california-commandline.vala \
 	application/california-resource.vala \
+	application/california-settings.vala \
 	application/main.vala \
 	\
 	backing/backing.vala \
@@ -118,6 +119,8 @@ california_VALASOURCES = \
 	toolkit/toolkit-editable-label.vala \
 	toolkit/toolkit-event-connector.vala \
 	toolkit/toolkit-listbox-model.vala \
+	toolkit/toolkit-motion-connector.vala \
+	toolkit/toolkit-motion-event.vala \
 	toolkit/toolkit-mutable-widget.vala \
 	toolkit/toolkit-popup.vala \
 	toolkit/toolkit-stack-model.vala \
@@ -136,6 +139,7 @@ california_VALASOURCES = \
 	\
 	view/common/common.vala \
 	view/common/common-events-cell.vala \
+	view/common/common-instance-container.vala \
 	\
 	view/month/month.vala \
 	view/month/month-cell.vala \
@@ -171,6 +175,7 @@ california_RC = \
 	rc/quick-create-event.ui \
 	rc/show-event.ui \
 	rc/webcal-subscribe.ui \
+	rc/window-menu.interface \
 	$(NULL)
 
 california_OPTIONAL_VALAFLAGS =

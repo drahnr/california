@@ -91,7 +91,7 @@ public class System : BaseObject {
      */
     public signal void timezone_changed(Timezone old_timezone, Timezone new_timezone);
     
-    private Settings system_clock_format_schema = new Settings(CLOCK_FORMAT_SCHEMA);
+    private GLib.Settings system_clock_format_schema = new GLib.Settings(CLOCK_FORMAT_SCHEMA);
     private uint date_timer_id = 0;
     
     private System() {

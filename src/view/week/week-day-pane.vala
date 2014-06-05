@@ -13,10 +13,11 @@ namespace California.View.Week {
  * @see AllDayCell
  */
 
-internal class DayPane : Pane {
+internal class DayPane : Pane, Common.InstanceContainer {
     public const string PROP_OWNER = "owner";
     public const string PROP_DATE = "date";
-    public const string PROP_SELECTED = "selected";
+    public const string PROP_SELECTION_STATE = "selection-start";
+    public const string PROP_SELECTION_END = "selection-end";
     
     // No matter how wide the event is in the day, always leave a little peeking out so the hour/min
     // lines are visible
@@ -24,7 +25,25 @@ internal class DayPane : Pane {
     
     public Calendar.Date date { get; set; }
     
-    public bool selected { get; set; default = false; }
+    /**
+     * Where the current selection starts, if any.
+     */
+    public Calendar.WallTime? selection_start { get; private set; }
+    
+    /**
+     * Where the current selection ends, if any.
+     */
+    public Calendar.WallTime? selection_end { get; private set; }
+    
+    /**
+     * @inheritDoc
+     */
+    public int event_count { get { return days_events.size; } }
+    
+    /**
+     * @inheritDoc
+     */
+    public Calendar.Span contained_span { get { return date; } }
     
     private Gee.TreeSet<Component.Event> days_events = new Gee.TreeSet<Component.Event>();
     private uint minutes_timeout_id = 0;
@@ -35,7 +54,7 @@ internal class DayPane : Pane {
         this.date = date;
         
         notify[PROP_DATE].connect(queue_draw);
-        notify[PROP_SELECTED].connect(queue_draw);
+        
         Calendar.System.instance.is_24hr_changed.connect(queue_draw);
         Calendar.System.instance.today_changed.connect(on_today_changed);
         
@@ -106,6 +125,12 @@ internal class DayPane : Pane {
         queue_draw();
     }
     
+    public void clear_events() {
+        days_events.clear();
+        
+        queue_draw();
+    }
+    
     public Component.Event? get_event_at(Gdk.Point point) {
         Calendar.ExactTime exact_time = new Calendar.ExactTime(Calendar.Timezone.local, date,
             get_wall_time(point.y));
@@ -120,22 +145,61 @@ internal class DayPane : Pane {
         return null;
     }
     
+    public void update_selection(Calendar.WallTime wall_time) {
+        // round down to the nearest 15-minute mark
+        Calendar.WallTime rounded_time = wall_time.round_down(15, Calendar.TimeUnit.MINUTE);
+        
+        // assign start first, end second (ordering doesn't matter, possible to select upwards)
+        if (selection_start == null) {
+            selection_start = rounded_time;
+            selection_end = null;
+        } else {
+            selection_end = rounded_time;
+        }
+        
+        // if same, treat as unselected
+        if (selection_start != null && selection_end != null && selection_start.equal_to(selection_end)) {
+            clear_selection();
+            
+            return;
+        }
+        
+        queue_draw();
+    }
+    
+    public Calendar.ExactTimeSpan? get_selection_span() {
+        if (selection_start == null || selection_end == null)
+            return null;
+        
+        return new Calendar.ExactTimeSpan(
+            new Calendar.ExactTime(Calendar.Timezone.local, date, selection_start),
+            new Calendar.ExactTime(Calendar.Timezone.local, date, selection_end)
+        );
+    }
+    
+    public void clear_selection() {
+        if (selection_start == null && selection_end == null)
+            return;
+        
+        selection_start = null;
+        selection_end = null;
+        
+        queue_draw();
+    }
+    
     // note that a painter's algorithm should be used here: background should be painted before
     // calling base method, and foreground afterward
     protected override bool on_draw(Cairo.Context ctx) {
-        // shade background color if this is current day or selected
-        if (selected) {
-            Gdk.cairo_set_source_rgba(ctx, Palette.instance.selection);
-            ctx.paint();
-        } else if (date.equal_to(Calendar.System.today)) {
-            Gdk.cairo_set_source_rgba(ctx, Palette.instance.current_day);
+        // shade background color if this is current day
+        if (date.equal_to(Calendar.System.today)) {
+            Gdk.cairo_set_source_rgba(ctx, palette.current_day);
             ctx.paint();
         }
         
         base.on_draw(ctx);
         
         // each event is drawn with a slightly-transparent rectangle with a solid hairline bounding
-        Palette.prepare_hairline(ctx, Palette.instance.border);
+        Palette.prepare_hairline(ctx, palette.border);
         
         foreach (Component.Event event in days_events) {
             // All-day events are handled in separate container ...
@@ -189,10 +253,23 @@ internal class DayPane : Pane {
         if (date.equal_to(Calendar.System.today)) {
             int time_of_day_y = get_line_y(Calendar.System.now.to_wall_time());
             
-            Palette.prepare_hairline(ctx, Palette.instance.current_time);
+            Palette.prepare_hairline(ctx, palette.current_time);
             ctx.move_to(0, time_of_day_y);
             ctx.line_to(get_allocated_width(), time_of_day_y);
             ctx.stroke();
+        }
+        
+        // draw selection rectangle
+        if (selection_start != null && selection_end != null) {
+            int start_y = get_line_y(selection_start);
+            int end_y = get_line_y(selection_end);
+            
+            int y = int.min(start_y, end_y);
+            int height = int.max(start_y, end_y) - y;
+            
+            ctx.rectangle(0, y, get_allocated_width(), height);
+            Gdk.cairo_set_source_rgba(ctx, palette.selection);
+            ctx.fill();
         }
         
         return true;
@@ -205,12 +282,12 @@ internal class DayPane : Pane {
             layout.set_markup(text, -1);
         else
             layout.set_text(text, -1);
-        layout.set_font_description(Palette.instance.small_font);
+        layout.set_font_description(palette.small_font);
         layout.set_width((total_width - (Palette.TEXT_MARGIN_PX * 2)) * Pango.SCALE);
         layout.set_ellipsize(Pango.EllipsizeMode.END);
         
         int y = get_line_y(start_time) + Palette.LINE_PADDING_PX
-            + (Palette.instance.small_font_height_px * lineno);
+            + (palette.small_font_height_px * lineno);
         
         ctx.move_to(Palette.TEXT_MARGIN_PX, y);
         Gdk.cairo_set_source_rgba(ctx, rgba);

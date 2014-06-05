@@ -22,6 +22,16 @@ public const int DEFAULT_STACK_TRANSITION_DURATION_MSEC = 300;
  */
 public const int SLOW_STACK_TRANSITION_DURATION_MSEC = 500;
 
+/**
+ * Indicates a GTK/GDK event should not be propagated further (no processing by other handlers).
+ */
+public const bool STOP = true;
+
+/**
+ * Indicates a GTK/GDK event should be propagated (continue processing by other handlers).
+ */
+public const bool PROPAGATE = false;
+
 private int init_count = 0;
 
 public void init() throws Error {
