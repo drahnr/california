@@ -16,48 +16,35 @@ namespace California.Toolkit {
  * interactions.
  */
 
-public class DeckWindow : Gtk.Dialog {
+public class DeckWindow : Gtk.Popover {
     public Deck deck { get; private set; }
     
-    public DeckWindow(Gtk.Window? parent, Deck? starter_deck) {
+    public signal void dismiss(bool user_request, bool final);
+    
+    public DeckWindow(Gtk.Widget rel_to, Gdk.Point? for_location, Deck? starter_deck) {
+        Object (relative_to: rel_to);
+        
         this.deck = starter_deck ?? new Deck();
         
-        transient_for = parent;
-        modal = true;
-        resizable = false;
+        if (for_location != null) {
+            Gdk.Rectangle for_location_rect = Gdk.Rectangle() { x = for_location.x, y = for_location.y,
+                width = 1, height = 1 };
+            pointing_to = for_location_rect;
+        }
         
         deck.dismiss.connect(on_deck_dismissed);
-        deck.success.connect(on_deck_success);
-        deck.failure.connect(on_deck_failure);
         
-        Gtk.Box content_area = (Gtk.Box) get_content_area();
-        content_area.margin = 8;
-        content_area.add(deck);
-        
-        get_action_area().visible = false;
-        get_action_area().no_show_all = true;
+        add(deck);
     }
     
     ~DeckWindow() {
         deck.dismiss.disconnect(on_deck_dismissed);
-        deck.success.disconnect(on_deck_success);
-        deck.failure.disconnect(on_deck_failure);
     }
     
     private void on_deck_dismissed(bool user_request, bool final) {
+        dismiss(user_request, final);
         if (final)
-            response(Gtk.ResponseType.CLOSE);
-    }
-    
-    private void on_deck_success() {
-        response(Gtk.ResponseType.OK);
-    }
-    
-    private void on_deck_failure(string? user_message) {
-        if (!String.is_empty(user_message))
-            Application.instance.error_message(user_message);
-        
-        response(Gtk.ResponseType.CLOSE);
+            destroy();
     }
 }
 

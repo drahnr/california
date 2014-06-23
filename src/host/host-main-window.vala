@@ -83,6 +83,8 @@ public class MainWindow : Gtk.ApplicationWindow {
         { ACTION_RESET_FONT, on_reset_font }
     };
     
+    public Gtk.Button calendar_button { get; private set; }
+    
     private Gtk.Button quick_add_button;
     private View.Palette palette;
     private View.Controllable month_view;
@@ -195,11 +197,11 @@ public class MainWindow : Gtk.ApplicationWindow {
         quick_add_button.tooltip_text = _("Quick add event (Ctrl+N)");
         quick_add_button.set_action_name(DETAILED_ACTION_QUICK_CREATE_EVENT);
         
-        Gtk.Button calendars = new Gtk.Button.from_icon_name("x-office-calendar-symbolic",
+        calendar_button = new Gtk.Button.from_icon_name("x-office-calendar-symbolic",
             Gtk.IconSize.MENU);
-        calendars.valign = Gtk.Align.CENTER;
-        calendars.tooltip_text = _("Calendars (Ctrl+L)");
-        calendars.set_action_name(Application.DETAILED_ACTION_CALENDAR_MANAGER);
+        calendar_button.valign = Gtk.Align.CENTER;
+        calendar_button.tooltip_text = _("Calendars (Ctrl+L)");
+        calendar_button.set_action_name(Application.DETAILED_ACTION_CALENDAR_MANAGER);
         
         Gtk.MenuButton window_menu = new Gtk.MenuButton();
         window_menu.valign = Gtk.Align.CENTER;
@@ -214,14 +216,14 @@ public class MainWindow : Gtk.ApplicationWindow {
         size.add_widget(prev);
         size.add_widget(next);
         size.add_widget(quick_add_button);
-        size.add_widget(calendars);
+        size.add_widget(calendar_button);
         size.add_widget(window_menu);
         
         // pack right-side of window ... note that this was fixed in 3.12, reversing the order of
         // how widgets need to be packed at the end
 #if GTK_312
         headerbar.pack_end(window_menu);
-        headerbar.pack_end(calendars);
+        headerbar.pack_end(calendar_button);
         headerbar.pack_end(quick_add_button);
 #else
         headerbar.pack_end(quick_add_button);
@@ -339,11 +341,11 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
     
     private void show_deck(Gtk.Widget relative_to, Gdk.Point? for_location, Toolkit.Deck deck) {
-        Toolkit.DeckWindow deck_window = new Toolkit.DeckWindow(this, deck);
+        Toolkit.DeckWindow deck_window = new Toolkit.DeckWindow(relative_to, for_location, deck);
         
         // when the dialog closes, reset View.Controllable state (selection is maintained while
         // use is viewing/editing interaction) and destroy widgets
-        deck_window.deck.dismiss.connect(() => {
+        deck_window.dismiss.connect(() => {
             current_controller.unselect_all();
             deck_window.hide();
             // give the dialog a change to hide before allowing other signals to fire, which may
@@ -352,8 +354,6 @@ public class MainWindow : Gtk.ApplicationWindow {
         });
         
         deck_window.show_all();
-        deck_window.run();
-        deck_window.destroy();
     }
     
     private void on_quick_create_event() {

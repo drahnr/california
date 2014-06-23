@@ -11,10 +11,8 @@ namespace California.Activator {
  */
 
 public class Window : Toolkit.DeckWindow {
-    private static Activator.Window? instance = null;
-    
-    private Window(Gtk.Window? parent) {
-        base (parent, null);
+    private Window(Gtk.Widget relative_to, Gdk.Point? for_location) {
+        base (relative_to, for_location, null);
         
         // The Deck is pre-populated with each of their Cards, with the InstanceList jumping to
         // the right set when asked to (and acting as home)
@@ -26,20 +24,9 @@ public class Window : Toolkit.DeckWindow {
         deck.add_cards(cards);
     }
     
-    public static void display(Gtk.Window? parent) {
-        // only allow one instance at a time
-        if (instance != null) {
-            instance.present_with_time(Gdk.CURRENT_TIME);
-            
-            return;
-        }
-        
-        instance = new Activator.Window(parent);
+    public static void display(Gtk.Widget relative_to, Gdk.Point? for_location) {
+        Activator.Window instance = new Activator.Window(relative_to, for_location);
         instance.show_all();
-        instance.run();
-        instance.destroy();
-        
-        instance = null;
     }
 }
 

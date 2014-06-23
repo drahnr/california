@@ -211,11 +211,11 @@ public class Application : Gtk.Application {
     }
     
     private void on_new_calendar() {
-        Activator.Window.display(main_window);
+        Activator.Window.display(main_window.calendar_button, null);
     }
     
     private void on_calendar_manager() {
-        Manager.Window.display(main_window);
+        Manager.Window.display(main_window.calendar_button, null);
     }
     
     private void on_process_file(SimpleAction action, Variant? variant) {

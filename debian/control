@@ -5,7 +5,7 @@ Maintainer: Jim Nelson <jim@yorba.org>
 Build-Depends: debhelper (>= 8),
  libgee-0.8-dev (>= 0.10.5),
  libglib2.0-dev (>= 2.38.0),
- libgtk-3-dev (>= 3.10.7),
+ libgtk-3-dev (>= 3.12.3),
  valac-0.22 (>= 0.21.1),
  intltool,
  libecal1.2-dev (>= 3.8.5),
