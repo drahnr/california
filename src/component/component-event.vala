@@ -96,6 +96,11 @@ public class Event : Instance, Gee.Comparable<Event> {
     public RecurrenceRule? rrule { get; private set; default = null; }
     
     /**
+     * @inheritDoc
+     */
+    public override bool is_recurring_master { get { return rid == null && rrule != null; } }
+    
+    /**
      * Create an {@link Event} {@link Component} from an EDS CalComponent object.
      *
      * Throws a BackingError if the E.CalComponent's VTYPE is not VEVENT.
@@ -439,7 +444,7 @@ public class Event : Instance, Gee.Comparable<Event> {
             return compare;
         
         // if recurring, go by sequence number, as the UID and RID are the same for all instances
-        if (is_recurring) {
+        if (is_recurring_generated) {
             compare = sequence - other.sequence;
             if (compare != 0)
                 return compare;
@@ -457,10 +462,13 @@ public class Event : Instance, Gee.Comparable<Event> {
         if (this == other_event)
             return true;
         
-        if (is_recurring != other_event.is_recurring)
+        if (is_recurring_master != other_event.is_recurring_master)
             return false;
         
-        if (is_recurring && !rid.equal_to(other_event.rid))
+        if (is_recurring_generated != other_event.is_recurring_generated)
+            return false;
+        
+        if (is_recurring_generated && !rid.equal_to(other_event.rid))
             return false;
         
         if (sequence != other_event.sequence)

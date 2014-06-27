@@ -46,6 +46,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     private Gtk.Button close_button;
     
     private new Component.Event event;
+    private Gtk.Menu? remove_recurring_menu = null;
     
     public ShowEvent() {
         Calendar.System.instance.is_24hr_changed.connect(build_display);
@@ -80,15 +81,35 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         // description
         set_label(null, description_text, Markup.linkify(escape(event.description), linkify_delegate));
         
+        // If recurring (and so this is a generated instance of the VEVENT, not the VEVENT itself),
+        // use a popup menu to ask how to remove this event
+        if (event.is_recurring_generated) {
+            remove_recurring_menu = new Gtk.Menu();
+            
+            Gtk.MenuItem remove_all = new Gtk.MenuItem.with_mnemonic(_("Remove _All Events"));
+            remove_all.activate.connect(on_remove_recurring_all);
+            remove_recurring_menu.append(remove_all);
+            
+            Gtk.MenuItem remove_this = new Gtk.MenuItem.with_mnemonic(_("Remove Only _This Event"));
+            remove_this.activate.connect(on_remove_recurring_this);
+            remove_recurring_menu.append(remove_this);
+            
+            Gtk.MenuItem remove_following = new Gtk.MenuItem.with_mnemonic(
+                _("Remove This and All _Following Events"));
+            remove_following.activate.connect(on_remove_recurring_this_and_following);
+            remove_recurring_menu.append(remove_following);
+        }
+        
         // don't current support updating or removing recurring events properly; see
         // https://bugzilla.gnome.org/show_bug.cgi?id=725786
-        // https://bugzilla.gnome.org/show_bug.cgi?id=725787
         bool read_only = event.calendar_source != null && event.calendar_source.read_only;
-        bool visible = !event.is_recurring && !read_only;
-        update_button.visible = visible;
-        update_button.no_show_all = !visible;
-        remove_button.visible = visible;
-        remove_button.no_show_all = !visible;
+        
+        bool updatable = !event.is_recurring_generated && !read_only;
+        update_button.visible = updatable;
+        update_button.no_show_all = updatable;
+        
+        remove_button.visible = !read_only;
+        remove_button.no_show_all = !read_only;
     }
     
     private string? escape(string? plain) {
@@ -130,6 +151,15 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_remove_button_clicked() {
+        if (event.is_recurring_generated) {
+            assert(remove_recurring_menu != null);
+            
+            remove_recurring_menu.popup(null, null, null, 0, Gtk.get_current_event_time());
+            remove_recurring_menu.show_all();
+            
+            return;
+        }
+        
         remove_event_async.begin();
     }
     
@@ -159,6 +189,16 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
             notify_success();
         else
             notify_failure(_("Unable to remove event: %s").printf(remove_err.message));
+    }
+    
+    private void on_remove_recurring_all() {
+        remove_event_async.begin();
+    }
+    
+    private void on_remove_recurring_this() {
+    }
+    
+    private void on_remove_recurring_this_and_following() {
     }
 }
 

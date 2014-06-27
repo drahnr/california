@@ -8,14 +8,38 @@ namespace California {
 
 /**
  * Take a Gee object and return a California.Iterable for convenience.
+ *
+ * An empty Gee.Iterable is created and used if null is passed in.
  */
-public California.Iterable<G> traverse<G>(Gee.Iterable<G> i) {
-    return new California.Iterable<G>(i.iterator());
+public California.Iterable<G> traverse<G>(Gee.Iterable<G>? gee_iterable) {
+    Gee.Iterable<G>? iterable = gee_iterable ?? new Gee.ArrayList<G>();
+    
+    return new California.Iterable<G>(iterable.iterator());
 }
 
 /**
- * Take some non-null items (all must be of type G) and return a
- * California.Iterable for convenience.
+ * Like {@link traverse}, but make a copy of the Gee.Iterable to allow for safe iteration over
+ * it.
+ *
+ * "Safe iteration" means later operations that remove elements while iterating do not cause an
+ * assertion.
+ *
+ * An empty Gee.Iterable is created and used if null is passed in.
+ */
+public California.Iterable<G> traverse_safely<G>(Gee.Iterable<G>? iterable) {
+    Gee.ArrayList<G> list = new Gee.ArrayList<G>();
+    
+    if (iterable != null) {
+        foreach (G element in iterable)
+            list.add(element);
+    }
+    
+    return California.traverse<G>(list);
+}
+
+/**
+ * Take some non-null items (all must be of type G) and return a California.Iterable for
+ * convenience.
  */
 public California.Iterable<G> iterate<G>(G g, ...) {
     va_list args = va_list();
@@ -30,27 +54,35 @@ public California.Iterable<G> iterate<G>(G g, ...) {
 }
 
 /**
- * Take a non-null array of non-null items (all of type G) and return a California.Iterable
- * for convenience.
+ * Take an array of non-null items (all of type G) and return a California.Iterable for convenience.
+ *
+ * An empty Gee.Iterable is created and used if null is passed in.
  */
-public California.Iterable<G> from_array<G>(G[] ar) {
+public California.Iterable<G> from_array<G>(G[]? ar) {
     Gee.ArrayList<G> list = new Gee.ArrayList<G>();
-    foreach (G item in ar)
-        list.add(item);
+    
+    if (ar != null) {
+        foreach (G item in ar)
+            list.add(item);
+    }
     
     return California.traverse<G>(list);
 }
 
 /**
  * Returns an {@link Iterable} of Unicode characters for each in the supplied string.
+ *
+ * An empty Gee.Iterable is created and used if null is passed in.
  */
-public Iterable<unichar> from_string(string str) {
+public Iterable<unichar> from_string(string? str) {
     Gee.ArrayList<unichar> list = new Gee.ArrayList<unichar>();
     
-    int index = 0;
-    unichar ch;
-    while (str.get_next_char(ref index, out ch))
-        list.add(ch);
+    if (!String.is_empty(str)) {
+        int index = 0;
+        unichar ch;
+        while (str.get_next_char(ref index, out ch))
+            list.add(ch);
+    }
     
     return California.traverse<unichar>(list);
 }
@@ -70,6 +102,11 @@ public class Iterable<G> : Object {
      * For {@link to_string}.
      */
     public delegate string? ToString<G>(G element);
+    
+    /**
+     * For simple iteration of the {@link Iterable}.
+     */
+    public delegate void Iterate<G>(G element);
     
     /**
      * A private class that lets us take a California.Iterable and convert it back
@@ -104,6 +141,22 @@ public class Iterable<G> : Object {
     
     public virtual Gee.Iterator<G> iterator() {
         return i;
+    }
+    
+    /**
+     * Be called for each element in the {@link Iterable}.
+     *
+     * No transformation of the Iterable is made.  The returned Iterable is for the same set of
+     * elements as had been iterated over.
+     */
+    public Iterable<G> iterate(Iterate<G> iteratee) {
+        Gee.ArrayList<G> list = new Gee.ArrayList<G>();
+        foreach (G g in this) {
+            iteratee(g);
+            list.add(g);
+        }
+        
+        return new Iterable<G>(list.iterator());
     }
     
     public Iterable<A> map<A>(Gee.MapFunc<A, G> f) {

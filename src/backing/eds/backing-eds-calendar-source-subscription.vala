@@ -112,6 +112,29 @@ internal class EdsCalendarSourceSubscription : CalendarSourceSubscription {
     
     private void on_objects_added(SList<weak iCal.icalcomponent> objects) {
         foreach (weak iCal.icalcomponent ical_component in objects) {
+            // convert the added object into an Event component and report as a master
+            Component.Event? added_master;
+            try {
+                added_master = Component.Instance.convert(calendar, ical_component) as Component.Event;
+                if (added_master == null)
+                    continue;
+            } catch (Error err) {
+                debug("Unable to process master event: %s", err.message);
+                
+                continue;
+            }
+            
+            notify_master_added(added_master);
+            
+            // if not recurring, report as an instance and stop there
+            if (!added_master.is_recurring_master) {
+                debug("Not generating instances for %s: not recurring", added_master.to_string());
+                
+                notify_instance_added(added_master);
+                
+                continue;
+            }
+            
             view.client.generate_instances_for_object(
                 ical_component,
                 window.start_exact_time.to_time_t(),
@@ -177,8 +200,13 @@ internal class EdsCalendarSourceSubscription : CalendarSourceSubscription {
     }
     
     private void on_objects_removed(SList<weak E.CalComponentId?> ids) {
-        foreach (weak E.CalComponentId id in ids)
-            notify_instance_removed(new Component.UID(id.uid));
+        foreach (weak E.CalComponentId id in ids) {
+            Component.RID? rid = null;
+            if (id.rid != null)
+                rid = new Component.RID(id.rid);
+            
+            notify_instance_removed(new Component.UID(id.uid), rid);
+        }
     }
 }
 

@@ -13,6 +13,13 @@ namespace California.Component {
  * components which allocate a specific amount of time within a calendar.  (Free/Busy does allow
  * for time to be published/reserved, but this implementation doesn't deal with that component.)
  *
+ * In addition, an Instance may be a ''recurring master'', which means it is the "original" iCal
+ * component describing a recurring event.  Its {@link Backing} will generated other Instances for
+ * each occurrence of the recurring event.  These ''recurring generated'' Instances can be used
+ * like any other Instance, but since the first generated Instance will match the time and date of
+ * the master Instance, care needs to be taken.  See {@link is_recurring_master} and
+ * {@link is_recurring_generated} for more information.
+ *
  * Mutability is achieved two separate ways.  One is to call {@link full_update} supplying a new
  * iCal component to update an existing one (verified by UID).  This will update all fields.
  *
@@ -65,14 +72,19 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
      *
      * See [[https://tools.ietf.org/html/rfc5545#section-3.8.4.4]]
      */
-    public Component.DateTime? rid { get; set; default = null; }
+    public Component.RID? rid { get; set; default = null; }
     
     /**
-     * Returns true if the {@link Recurrable} is in fact a recurring instance.
+     * Returns true if the {@link Instance} is a master describing recurrences.
+     */
+    public abstract bool is_recurring_master { get; }
+    
+    /**
+     * Returns true if the {@link Instance} is generated from a master with a recurring rule.
      *
      * @see rid
      */
-    public bool is_recurring { get { return rid != null; } }
+    public bool is_recurring_generated { get { return rid != null; } }
     
     /**
      * The SEQUENCE of a VEVENT, VTODO, or VJOURNAL.
@@ -240,7 +252,8 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         }
         
         try {
-            rid = new DateTime(ical_component, iCal.icalproperty_kind.RECURRENCEID_PROPERTY);
+            rid = new Component.RID.from_date_time(
+                new DateTime(ical_component, iCal.icalproperty_kind.RECURRENCEID_PROPERTY));
         } catch (ComponentError comperr) {
             // ignore if unavailable
             if (!(comperr is ComponentError.UNAVAILABLE))
