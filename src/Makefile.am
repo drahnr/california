@@ -86,7 +86,6 @@ california_VALASOURCES = \
 	component/component-icalendar.vala \
 	component/component-instance.vala \
 	component/component-recurrence-rule.vala \
-	component/component-rid.vala \
 	component/component-uid.vala \
 	component/component-vtype.vala \
 	\
