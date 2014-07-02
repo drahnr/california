@@ -118,6 +118,31 @@ internal class EdsCalendarSource : CalendarSource {
         read_only = true;
     }
     
+    // Note that E.CalObjModType.ONLY_THIS is *never* returned ... examining EDS source code,
+    // it appears in e-cal-backend-file.c that ONLY_THIS merely removes the instance but does not
+    // include an EXDATE in the original iCal source ... I don't quite understand the benefit of
+    // this, as this suggests (a) other calendar clients won't learn of the removal and (b) the
+    // instance will be re-generated the next time the user runs an EDS calendar client.  In either
+    // case, ONLY maps to our desired effect by adding an EXDATE to the iCal source.
+    private E.CalObjModType convert_to_obj_mod_type(CalendarSource.AffectedInstances affected) {
+        switch (affected) {
+            case CalendarSource.AffectedInstances.THIS:
+                return E.CalObjModType.THIS;
+            
+            case CalendarSource.AffectedInstances.THIS_AND_FUTURE:
+                return E.CalObjModType.THIS_AND_FUTURE;
+            
+            case CalendarSource.AffectedInstances.THIS_AND_PRIOR:
+                return E.CalObjModType.THIS_AND_PRIOR;
+            
+            case CalendarSource.AffectedInstances.ALL:
+                return E.CalObjModType.ALL;
+            
+            default:
+                assert_not_reached();
+        }
+    }
+    
     private void check_open() throws BackingError {
         if (client == null)
             throw new BackingError.UNAVAILABLE("%s has been removed", to_string());
@@ -155,11 +180,26 @@ internal class EdsCalendarSource : CalendarSource {
         yield client.modify_object(instance.ical_component, E.CalObjModType.THIS, cancellable);
     }
     
-    public override async void remove_component_async(Component.UID uid,
+    public override async void remove_all_instances_async(Component.UID uid,
         Cancellable? cancellable = null) throws Error {
         check_open();
         
-        yield client.remove_object(uid.value, null, E.CalObjModType.THIS, cancellable);
+        yield client.remove_object(uid.value, null, E.CalObjModType.ALL, cancellable);
+    }
+    
+    public override async void remove_instances_async(Component.UID uid, Component.DateTime rid,
+        CalendarSource.AffectedInstances affected, Cancellable? cancellable = null) throws Error {
+        check_open();
+        
+        E.CalObjModType mod_type = convert_to_obj_mod_type(affected);
+        
+        debug("remove_instances_async: UID=%s RID=%s MOD_TYPE=%Xh", uid.value, rid.value, mod_type);
+        
+        // special-case ALL
+        if (mod_type == E.CalObjModType.ALL)
+            yield remove_all_instances_async(uid, cancellable);
+        else
+            yield client.remove_object(uid.value, rid.value, mod_type, cancellable);
     }
     
     public override async void import_icalendar_async(Component.iCalendar ical, Cancellable? cancellable = null)

@@ -83,7 +83,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         
         // If recurring (and so this is a generated instance of the VEVENT, not the VEVENT itself),
         // use a popup menu to ask how to remove this event
-        if (event.is_recurring_generated) {
+        if (event.is_recurring) {
             remove_recurring_menu = new Gtk.Menu();
             
             Gtk.MenuItem remove_all = new Gtk.MenuItem.with_mnemonic(_("Remove _All Events"));
@@ -98,13 +98,18 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
                 _("Remove This and All _Following Events"));
             remove_following.activate.connect(on_remove_recurring_this_and_following);
             remove_recurring_menu.append(remove_following);
+            
+            Gtk.MenuItem remove_prior = new Gtk.MenuItem.with_mnemonic(
+                _("Remove This and All _Prior Events"));
+            remove_prior.activate.connect(on_remove_recurring_this_and_prior);
+            remove_recurring_menu.append(remove_prior);
         }
         
         // don't current support updating or removing recurring events properly; see
         // https://bugzilla.gnome.org/show_bug.cgi?id=725786
         bool read_only = event.calendar_source != null && event.calendar_source.read_only;
         
-        bool updatable = !event.is_recurring_generated && !read_only;
+        bool updatable = !event.is_recurring && !read_only;
         update_button.visible = updatable;
         update_button.no_show_all = updatable;
         
@@ -151,7 +156,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_remove_button_clicked() {
-        if (event.is_recurring_generated) {
+        if (event.is_recurring) {
             assert(remove_recurring_menu != null);
             
             remove_recurring_menu.popup(null, null, null, 0, Gtk.get_current_event_time());
@@ -160,7 +165,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
             return;
         }
         
-        remove_event_async.begin();
+        remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
     }
     
     [GtkCallback]
@@ -173,32 +178,44 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         notify_user_closed();
     }
     
-    private async void remove_event_async() {
+    private async void remove_events_async(Component.DateTime? rid,
+        Backing.CalendarSource.AffectedInstances affected) {
         Gdk.Cursor? cursor = Toolkit.set_busy(this);
         
         Error? remove_err = null;
         try {
-            yield event.calendar_source.remove_component_async(event.uid, null);
+            if (rid == null || affected == Backing.CalendarSource.AffectedInstances.ALL)
+                yield event.calendar_source.remove_all_instances_async(event.uid, null);
+            else
+                yield event.calendar_source.remove_instances_async(event.uid, rid, affected, null);
         } catch (Error err) {
             remove_err = err;
         }
         
         Toolkit.set_unbusy(this, cursor);
         
-        if (remove_err == null)
+        if (remove_err == null) {
             notify_success();
-        else
-            notify_failure(_("Unable to remove event: %s").printf(remove_err.message));
+        } else {
+            notify_failure(ngettext("Unable to remove event: %s", "Unable to remove events: %s",
+                rid == null ? 1 : 2).printf(remove_err.message));
+        }
     }
     
     private void on_remove_recurring_all() {
-        remove_event_async.begin();
+        remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
     }
     
     private void on_remove_recurring_this() {
+        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS);
     }
     
     private void on_remove_recurring_this_and_following() {
+        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_FUTURE);
+    }
+    
+    private void on_remove_recurring_this_and_prior() {
+        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_PRIOR);
     }
 }
 

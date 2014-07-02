@@ -9,6 +9,13 @@ namespace California.Backing {
 /**
  * A subscription to an active timespan of interest of a calendar.
  *
+ * CalendarSourceSubscription generates {@link Component.Instance}s of the various events in a
+ * window of time in a calendar.  Note that for recurring events, there is no interface to directly
+ * edit or remove the "original" iCalendar source.  Rather, the caller should update or remove
+ * generated instances of that recurring event with flags to indicate how the original is to be
+ * altered to match these changes.  See {@link CalendarSource} for the interface to make these
+ * alterations.
+ *
  * The subscription can notify of calendar event updates and list a complete or partial collections
  * of the same.
  */

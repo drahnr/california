@@ -234,7 +234,9 @@ ECalComponentAttendee is_value_type="1"
 ECalComponentDateTime is_value_type="1" has_destroy_function="0"
 ECalComponentDateTime.value type_name="iCal.icaltimetype*"
 
-ECalComponentId is_value_type="1"
+ECalComponentId is_value_type="0" free_function="e_cal_component_free_id"
+e_cal_component_id_copy transfer_ownership="1"
+
 ECalComponentOrganizer is_value_type="1"
 ECalComponentPeriod is_value_type="1"
 ECalComponentPeriod.start type_name="iCal.icaltimetype"

@@ -248,6 +248,17 @@ namespace E {
 		public void set_repeat (E.CalComponentAlarmRepeat repeat);
 		public void set_trigger (E.CalComponentAlarmTrigger trigger);
 	}
+	[CCode (cheader_filename = "libecal/libecal.h", copy_function = "e_cal_component_id_copy", free_function = "e_cal_component_free_id")]
+	[Compact]
+	public class CalComponentId {
+		public weak string rid;
+		public weak string uid;
+		[CCode (has_construct_function = false)]
+		public CalComponentId (string uid, string rid);
+		public E.CalComponentId copy ();
+		public bool equal (E.CalComponentId id2);
+		public uint hash ();
+	}
 	[CCode (cheader_filename = "libecal/libecal.h")]
 	public interface TimezoneCache : GLib.Object {
 		public abstract unowned GLib.List list_timezones ();
@@ -299,16 +310,6 @@ namespace E {
 	public struct CalComponentDateTime {
 		public iCal.icaltimetype* value;
 		public weak string tzid;
-	}
-	[CCode (cheader_filename = "libecal/libecal.h")]
-	public struct CalComponentId {
-		public weak string uid;
-		public weak string rid;
-		[CCode (has_construct_function = false)]
-		public CalComponentId (string uid, string rid);
-		public E.CalComponentId copy ();
-		public bool equal (E.CalComponentId id2);
-		public uint hash ();
 	}
 	[CCode (cheader_filename = "libecal/libecal.h")]
 	public struct CalComponentOrganizer {
