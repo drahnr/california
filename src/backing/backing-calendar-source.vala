@@ -89,6 +89,9 @@ public abstract class CalendarSource : Source {
      * {@link CalendarSource} keyed to the supplied {@link Component.UID}, the supplied RID,
      * and the {@link AffectedInstances}.
      *
+     * If {@link AffectedInstances.ALL} is passed, the RID is ignored.  This is operationally the
+     * same as calling {@link remove_all_instances_async}.
+     *
      * Outstanding {@link CalendarSourceSubscriptions} will eventually report all affected instances
      * as removed.
      */

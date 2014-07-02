@@ -112,6 +112,23 @@ internal class EdsCalendarSourceSubscription : CalendarSourceSubscription {
     
     private void on_objects_added(SList<weak iCal.icalcomponent> objects) {
         foreach (weak iCal.icalcomponent ical_component in objects) {
+            if (String.is_empty(ical_component.get_uid()))
+                continue;
+            
+            Component.UID uid = new Component.UID(ical_component.get_uid());
+            
+            // remove all existing components with this UID
+            if (has_uid(uid))
+                notify_instance_removed(uid);
+            
+            // if no recurrences, add this alone
+            if (!E.Util.component_has_recurrences(ical_component)) {
+                add_instance(ical_component);
+                
+                continue;
+            }
+            
+            // generate recurring instances
             view.client.generate_instances_for_object(
                 ical_component,
                 window.start_exact_time.to_time_t(),
@@ -124,56 +141,70 @@ internal class EdsCalendarSourceSubscription : CalendarSourceSubscription {
     
     private bool on_instance_added(E.CalComponent eds_component, time_t instance_start,
         time_t instance_end) {
-        unowned iCal.icalcomponent ical_component = eds_component.get_icalcomponent();
-        
-        // convert the added component into a new Event
-        Component.Event? added_event;
-        try {
-            added_event = Component.Instance.convert(calendar, ical_component) as Component.Event;
-            if (added_event == null)
-                return true;
-        } catch (Error err) {
-            debug("Unable to process added event: %s", err.message);
-            
-            return true;
-        }
-        
-        // see if this was seen before
-        Component.Event? seen_event = has_instance(added_event) as Component.Event;
-        if (seen_event != null)
-            return true;
-        
-        // nope, it's a new one
-        notify_instance_added(added_event);
+        add_instance(eds_component.get_icalcomponent());
         
         return true;
     }
     
+    // Assumes all existing events with UID/RID have been removed already
+    private void add_instance(iCal.icalcomponent ical_component) {
+        // convert the added component into a new Event
+        Component.Event? added_event;
+        try {
+            added_event = Component.Instance.convert(calendar, ical_component) as Component.Event;
+            if (added_event != null)
+                notify_instance_added(added_event);
+        } catch (Error err) {
+            debug("Unable to process added event: %s", err.message);
+        }
+    }
+    
     private void on_objects_modified(SList<weak iCal.icalcomponent> objects) {
+        SList<weak iCal.icalcomponent> add_list = new SList<weak iCal.icalcomponent>();
         foreach (weak iCal.icalcomponent ical_component in objects) {
-            // convert the modified event source into an orphaned event (for comparison purposes)
-            Component.Event modified_event;
-            try {
-                modified_event = new Component.Event(null, ical_component);
-            } catch (Error err) {
-                debug("Unable to process modified event: %s", err.message);
+            // if not an instance and has recurring, treat as an add (which removes and adds generated
+            // instances)
+            if (!E.Util.component_is_instance(ical_component) && E.Util.component_has_recurrences(ical_component)) {
+                add_list.append(ical_component);
                 
                 continue;
             }
             
-            // find original event instance for this one
-            Component.Event? seen_event = has_instance(modified_event) as Component.Event;
-            if (seen_event == null)
+            if (String.is_empty(ical_component.get_uid()))
                 continue;
             
-            try {
-                seen_event.full_update(ical_component, null);
-            } catch (Error err) {
-                debug("Unable to update event %s: %s", seen_event.to_string(), err.message);
+            // if none present, skip
+            Component.UID uid = new Component.UID(ical_component.get_uid());
+            if (!has_uid(uid))
+                continue;
+            
+            // find original for this one
+            Gee.Collection<Component.Instance>? instances = for_uid(uid);
+            if (instances == null || instances.size == 0)
+                continue;
+            
+            foreach (Component.Instance instance in instances) {
+                Component.Event? known_event = instance as Component.Event;
+                if (known_event == null)
+                    continue;
+                
+                try {
+                    known_event.full_update(ical_component, null);
+                } catch (Error err) {
+                    debug("Unable to update event %s: %s", known_event.to_string(), err.message);
+                    
+                    continue;
+                }
+                
+                notify_instance_altered(known_event);
             }
             
-            notify_instance_altered(seen_event);
+            if (instances.size > 1)
+                debug("Warning: updated %d modified events, expecting only 1", instances.size);
         }
+        
+        // add any recurring events
+        on_objects_added(add_list);
     }
     
     private void on_objects_removed(SList<weak E.CalComponentId?> ids) {

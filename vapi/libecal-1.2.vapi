@@ -2,6 +2,14 @@
 
 [CCode (cprefix = "E", gir_namespace = "ECalendar", gir_version = "1.2", lower_case_cprefix = "e_")]
 namespace E {
+	namespace Util {
+		[CCode (cheader_filename = "libecal/libecal.h", cname = "e_cal_util_component_has_recurrences")]
+		public static bool component_has_recurrences (iCal.icalcomponent ical_component);
+		[CCode (cheader_filename = "libecal/libecal.h", cname = "e_cal_util_component_is_instance")]
+		public static bool component_is_instance (iCal.icalcomponent ical_component);
+		[CCode (cheader_filename = "libecal/libecal.h", cname = "e_cal_util_remove_instances")]
+		public static bool remove_instances (iCal.icalcomponent ical_component, iCal.icaltimetype rid, E.CalObjModType mod);
+	}
 	[CCode (cheader_filename = "libecal/libecal.h", type_id = "e_cal_client_get_type ()")]
 	public class CalClient : E.Client, GLib.Initable, GLib.AsyncInitable, E.TimezoneCache {
 		[CCode (has_construct_function = false)]
