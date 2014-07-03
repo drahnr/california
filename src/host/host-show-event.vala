@@ -100,11 +100,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
                 _("Remove This and All _Following Events"));
             remove_following.activate.connect(on_remove_recurring_this_and_following);
             remove_recurring_menu.append(remove_following);
-            
-            Gtk.MenuItem remove_prior = new Gtk.MenuItem.with_mnemonic(
-                _("Remove This and All _Prior Events"));
-            remove_prior.activate.connect(on_remove_recurring_this_and_prior);
-            remove_recurring_menu.append(remove_prior);
         }
         
         // don't current support updating or removing recurring events properly; see
@@ -214,10 +209,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     
     private void on_remove_recurring_this_and_following() {
         remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_FUTURE);
-    }
-    
-    private void on_remove_recurring_this_and_prior() {
-        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_PRIOR);
     }
 }
 

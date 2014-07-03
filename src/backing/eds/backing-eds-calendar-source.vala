@@ -178,11 +178,7 @@ internal class EdsCalendarSource : CalendarSource {
             break;
             
             case CalendarSource.AffectedInstances.THIS_AND_FUTURE:
-                yield remove_future_async(uid, rid, cancellable);
-            break;
-            
-            case CalendarSource.AffectedInstances.THIS_AND_PRIOR:
-                yield remove_prior_async(uid, rid, cancellable);
+                yield remove_this_and_future_async(uid, rid, cancellable);
             break;
             
             case CalendarSource.AffectedInstances.ALL:
@@ -194,7 +190,7 @@ internal class EdsCalendarSource : CalendarSource {
         }
     }
     
-    private async void remove_future_async(Component.UID uid, Component.DateTime rid,
+    private async void remove_this_and_future_async(Component.UID uid, Component.DateTime rid,
         Cancellable? cancellable) throws Error {
         // get the master instance ... remember that the Backing.CalendarSource only stores generated
         // instances
@@ -225,33 +221,6 @@ internal class EdsCalendarSource : CalendarSource {
         rrule.count = 0;
         
         rrule_property.set_rrule(rrule);
-        
-        // write it out ... essentially, this style of remove is actually an update
-        yield client.modify_object(ical_component, E.CalObjModType.THIS, cancellable);
-    }
-    
-    private async void remove_prior_async(Component.UID uid, Component.DateTime rid,
-        Cancellable? cancellable) throws Error {
-        // get the master instance ... remember that the Backing.CalendarSource only stores generated
-        // instances
-        iCal.icalcomponent ical_component;
-        yield client.get_object(uid.value, null, cancellable, out ical_component);
-        
-        // like remove_future_async(), need to set DTSTART one tick forward to ensure the supplied
-        // RID is now excluded
-        //
-        // TODO: DTSTART needs to be synchronized with recurrences, so this is a no-go
-        iCal.icaltimetype dtstart = {};
-        if (rid.is_date) {
-            Component.date_to_ical(rid.to_date().next(), &dtstart);
-        } else {
-            Component.exact_time_to_ical(rid.to_exact_time().adjust_time(1, Calendar.TimeUnit.SECOND),
-                &dtstart);
-        }
-        
-        // change the DTSTART indicating the start of the recurring set (which is, handily enough,
-        // the RID)
-        ical_component.set_dtstart(dtstart);
         
         // write it out ... essentially, this style of remove is actually an update
         yield client.modify_object(ical_component, E.CalObjModType.THIS, cancellable);

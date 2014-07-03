@@ -30,10 +30,6 @@ public abstract class CalendarSource : Source {
          */
         THIS = 0,
         /**
-         * Include all prior {@link Component.Instance}s in the affected instances.
-         */
-        THIS_AND_PRIOR,
-        /**
          * Include all future {@link Component.Instance}s in the affected instances.
          */
         THIS_AND_FUTURE,
