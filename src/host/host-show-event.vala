@@ -69,6 +69,8 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     }
     
     private void build_display() {
+        debug("%s\n", event.source);
+        
         // summary
         set_label(null, summary_text, event.summary);
         

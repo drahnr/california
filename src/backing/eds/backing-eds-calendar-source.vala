@@ -118,31 +118,6 @@ internal class EdsCalendarSource : CalendarSource {
         read_only = true;
     }
     
-    // Note that E.CalObjModType.ONLY_THIS is *never* returned ... examining EDS source code,
-    // it appears in e-cal-backend-file.c that ONLY_THIS merely removes the instance but does not
-    // include an EXDATE in the original iCal source ... I don't quite understand the benefit of
-    // this, as this suggests (a) other calendar clients won't learn of the removal and (b) the
-    // instance will be re-generated the next time the user runs an EDS calendar client.  In either
-    // case, ONLY maps to our desired effect by adding an EXDATE to the iCal source.
-    private E.CalObjModType convert_to_obj_mod_type(CalendarSource.AffectedInstances affected) {
-        switch (affected) {
-            case CalendarSource.AffectedInstances.THIS:
-                return E.CalObjModType.THIS;
-            
-            case CalendarSource.AffectedInstances.THIS_AND_FUTURE:
-                return E.CalObjModType.THIS_AND_FUTURE;
-            
-            case CalendarSource.AffectedInstances.THIS_AND_PRIOR:
-                return E.CalObjModType.THIS_AND_PRIOR;
-            
-            case CalendarSource.AffectedInstances.ALL:
-                return E.CalObjModType.ALL;
-            
-            default:
-                assert_not_reached();
-        }
-    }
-    
     private void check_open() throws BackingError {
         if (client == null)
             throw new BackingError.UNAVAILABLE("%s has been removed", to_string());
@@ -191,15 +166,95 @@ internal class EdsCalendarSource : CalendarSource {
         CalendarSource.AffectedInstances affected, Cancellable? cancellable = null) throws Error {
         check_open();
         
-        E.CalObjModType mod_type = convert_to_obj_mod_type(affected);
+        // Note that E.CalObjModType.ONLY_THIS is *never* used ... examining EDS source code,
+        // it appears in e-cal-backend-file.c that ONLY_THIS merely removes the instance but does not
+        // include an EXDATE in the original iCal source ... I don't quite understand the benefit of
+        // this, as this suggests (a) other calendar clients won't learn of the removal and (b) the
+        // instance will be re-generated the next time the user runs an EDS calendar client.  In
+        // either case, ONLY maps to our desired effect by adding an EXDATE to the iCal source.
+        switch (affected) {
+            case CalendarSource.AffectedInstances.THIS:
+                yield client.remove_object(uid.value, rid.value, E.CalObjModType.THIS, cancellable);
+            break;
+            
+            case CalendarSource.AffectedInstances.THIS_AND_FUTURE:
+                yield remove_future_async(uid, rid, cancellable);
+            break;
+            
+            case CalendarSource.AffectedInstances.THIS_AND_PRIOR:
+                yield remove_prior_async(uid, rid, cancellable);
+            break;
+            
+            case CalendarSource.AffectedInstances.ALL:
+                yield remove_all_instances_async(uid, cancellable);
+            break;
+            
+            default:
+                assert_not_reached();
+        }
+    }
+    
+    private async void remove_future_async(Component.UID uid, Component.DateTime rid,
+        Cancellable? cancellable) throws Error {
+        // get the master instance ... remember that the Backing.CalendarSource only stores generated
+        // instances
+        iCal.icalcomponent ical_component;
+        yield client.get_object(uid.value, null, cancellable, out ical_component);
         
-        debug("remove_instances_async: UID=%s RID=%s MOD_TYPE=%Xh", uid.value, rid.value, mod_type);
+        // change the RRULE's UNTIL indicating the end of the recurring set (which is, handily enough,
+        // the RID)
+        unowned iCal.icalproperty? rrule_property = ical_component.get_first_property(
+            iCal.icalproperty_kind.RRULE_PROPERTY);
+        if (rrule_property == null)
+            return;
         
-        // special-case ALL
-        if (mod_type == E.CalObjModType.ALL)
-            yield remove_all_instances_async(uid, cancellable);
-        else
-            yield client.remove_object(uid.value, rid.value, mod_type, cancellable);
+        iCal.icalrecurrencetype rrule = rrule_property.get_rrule();
+        
+        // In order to be inclusive, need to set UNTIL one tick earlier to ensure the supplied RID
+        // is now excluded
+        if (rid.is_date) {
+            Component.date_to_ical(rid.to_date().previous(), &rrule.until);
+        } else {
+            Component.exact_time_to_ical(rid.to_exact_time().adjust_time(-1, Calendar.TimeUnit.SECOND),
+                &rrule.until);
+        }
+        
+        // COUNT and UNTIL are mutually exclusive in an RRULE ... COUNT can be reliably reset
+        // because the RID enforces a new de facto COUNT (assuming the RID originated from the UID's
+        // recurring instance; if not, the user has screwed up)
+        rrule.count = 0;
+        
+        rrule_property.set_rrule(rrule);
+        
+        // write it out ... essentially, this style of remove is actually an update
+        yield client.modify_object(ical_component, E.CalObjModType.THIS, cancellable);
+    }
+    
+    private async void remove_prior_async(Component.UID uid, Component.DateTime rid,
+        Cancellable? cancellable) throws Error {
+        // get the master instance ... remember that the Backing.CalendarSource only stores generated
+        // instances
+        iCal.icalcomponent ical_component;
+        yield client.get_object(uid.value, null, cancellable, out ical_component);
+        
+        // like remove_future_async(), need to set DTSTART one tick forward to ensure the supplied
+        // RID is now excluded
+        //
+        // TODO: DTSTART needs to be synchronized with recurrences, so this is a no-go
+        iCal.icaltimetype dtstart = {};
+        if (rid.is_date) {
+            Component.date_to_ical(rid.to_date().next(), &dtstart);
+        } else {
+            Component.exact_time_to_ical(rid.to_exact_time().adjust_time(1, Calendar.TimeUnit.SECOND),
+                &dtstart);
+        }
+        
+        // change the DTSTART indicating the start of the recurring set (which is, handily enough,
+        // the RID)
+        ical_component.set_dtstart(dtstart);
+        
+        // write it out ... essentially, this style of remove is actually an update
+        yield client.modify_object(ical_component, E.CalObjModType.THIS, cancellable);
     }
     
     public override async void import_icalendar_async(Component.iCalendar ical, Cancellable? cancellable = null)

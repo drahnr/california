@@ -51,7 +51,8 @@ namespace E {
 		public async bool get_free_busy (ulong start, ulong end, GLib.SList users, GLib.Cancellable? cancellable) throws GLib.Error;
 		public bool get_free_busy_sync (ulong start, ulong end, GLib.SList users, GLib.Cancellable? cancellable) throws GLib.Error;
 		public unowned string get_local_attachment_store ();
-		public async bool get_object (string uid, string rid, GLib.Cancellable? cancellable, out unowned iCal.icalcomponent out_icalcomp) throws GLib.Error;
+		[CCode (finish_name = "e_cal_client_get_object_finish")]
+		public async void get_object (string uid, string? rid, GLib.Cancellable? cancellable, out iCal.icalcomponent out_icalcomp) throws GLib.Error;
 		public async bool get_object_list (string sexp, GLib.Cancellable? cancellable) throws GLib.Error;
 		public async bool get_object_list_as_comps (string sexp, GLib.Cancellable? cancellable) throws GLib.Error;
 		public bool get_object_list_as_comps_sync (string sexp, GLib.SList out_ecalcomps, GLib.Cancellable? cancellable) throws GLib.Error;

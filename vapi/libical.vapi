@@ -1678,7 +1678,8 @@ namespace iCal {
 	[Compact]
 	public class sspm_minor_type {
 	}
-	[CCode (cheader_filename = "libical/ical.h")]
+	[CCode (cheader_filename = "libical/ical.h", cname="struct icaldatetimeperiodtype")]
+	[SimpleType]
 	public struct icaldatetimeperiodtype {
 		public iCal.icaltimetype time;
 		public iCal.icalperiodtype period;
@@ -1688,7 +1689,8 @@ namespace iCal {
 		public float lat;
 		public float lon;
 	}
-	[CCode (cheader_filename = "libical/ical.h")]
+	[CCode (cheader_filename = "libical/ical.h", cname="struct icalperiodtype")]
+	[SimpleType]
 	public struct icalperiodtype {
 		public iCal.icaltimetype start;
 		public iCal.icaltimetype end;

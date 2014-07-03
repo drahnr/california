@@ -169,7 +169,7 @@ public class DateTime : BaseObject, Gee.Hashable<DateTime>, Gee.Comparable<DateT
      *
      * Returns null if {@link is_date} is true.
      */
-    public Calendar.ExactTime? to_exact_time() throws CalendarError{
+    public Calendar.ExactTime? to_exact_time() throws CalendarError {
         if (is_date)
             return null;
         

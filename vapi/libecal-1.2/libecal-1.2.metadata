@@ -82,9 +82,12 @@ e_cal_client_get_free_busy async="1"
 e_cal_client_get_free_busy.cancellable nullable="1"
 e_cal_client_get_free_busy_sync.cancellable nullable="1"
 
-e_cal_client_get_object async="1"
+e_cal_client_get_object async="1" finish_name="e_cal_client_get_object_finish"
+e_cal_client_get_object.rid nullable="1"
 e_cal_client_get_object.cancellable nullable="1"
-e_cal_client_get_object_finish.icalcomp is_out="1" value_owned="1"
+
+e_cal_client_get_object_finish type_name="void"
+e_cal_client_get_object_finish.out_icalcomp is_out="1" transfer_ownership="1"
 
 e_cal_client_get_object_list async="1"
 e_cal_client_get_object_list.cancellable nullable="1"
