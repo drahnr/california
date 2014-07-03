@@ -45,8 +45,13 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     [GtkChild]
     private Gtk.Button close_button;
     
+    [GtkChild]
+    private Gtk.Revealer button_box_revealer;
+    
+    [GtkChild]
+    private Gtk.Revealer remove_recurring_revealer;
+    
     private new Component.Event event;
-    private Gtk.Menu? remove_recurring_menu = null;
     
     public ShowEvent() {
         Calendar.System.instance.is_24hr_changed.connect(build_display);
@@ -69,8 +74,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     }
     
     private void build_display() {
-        debug("%s\n", event.source);
-        
         // summary
         set_label(null, summary_text, event.summary);
         
@@ -82,25 +85,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         
         // description
         set_label(null, description_text, Markup.linkify(escape(event.description), linkify_delegate));
-        
-        // If recurring (and so this is a generated instance of the VEVENT, not the VEVENT itself),
-        // use a popup menu to ask how to remove this event
-        if (event.is_recurring) {
-            remove_recurring_menu = new Gtk.Menu();
-            
-            Gtk.MenuItem remove_all = new Gtk.MenuItem.with_mnemonic(_("Remove _All Events"));
-            remove_all.activate.connect(on_remove_recurring_all);
-            remove_recurring_menu.append(remove_all);
-            
-            Gtk.MenuItem remove_this = new Gtk.MenuItem.with_mnemonic(_("Remove Only _This Event"));
-            remove_this.activate.connect(on_remove_recurring_this);
-            remove_recurring_menu.append(remove_this);
-            
-            Gtk.MenuItem remove_following = new Gtk.MenuItem.with_mnemonic(
-                _("Remove This and All _Following Events"));
-            remove_following.activate.connect(on_remove_recurring_this_and_following);
-            remove_recurring_menu.append(remove_following);
-        }
         
         // don't current support updating or removing recurring events properly; see
         // https://bugzilla.gnome.org/show_bug.cgi?id=725786
@@ -153,15 +137,39 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_remove_button_clicked() {
+        // If recurring (and so this is a generated instance of the VEVENT, not the VEVENT itself),
+        // reveal additional remove buttons
+        //
+        // TODO: Gtk.Stack would be a better widget for this animation, but it's unavailable in
+        // Glade as of GTK+ 3.12.
         if (event.is_recurring) {
-            assert(remove_recurring_menu != null);
-            
-            remove_recurring_menu.popup(null, null, null, 0, Gtk.get_current_event_time());
-            remove_recurring_menu.show_all();
+            button_box_revealer.reveal_child = false;
+            remove_recurring_revealer.reveal_child = true;
             
             return;
         }
         
+        remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
+    }
+    
+    [GtkCallback]
+    private void on_cancel_remove_recurring_button_clicked() {
+        button_box_revealer.reveal_child = true;
+        remove_recurring_revealer.reveal_child = false;
+    }
+    
+    [GtkCallback]
+    private void on_remove_this_button_clicked() {
+        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS);
+    }
+    
+    [GtkCallback]
+    private void on_remove_future_button_clicked() {
+        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_FUTURE);
+    }
+    
+    [GtkCallback]
+    private void on_remove_all_button_clicked() {
         remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
     }
     
@@ -194,21 +202,13 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         if (remove_err == null) {
             notify_success();
         } else {
+            bool multiple = (rid != null) || (affected != Backing.CalendarSource.AffectedInstances.THIS);
+            
+            // No number is supplied because the number of events removed is indefinite in certain
+            // situations ... plural text should simply be for "more than one"
             notify_failure(ngettext("Unable to remove event: %s", "Unable to remove events: %s",
-                rid == null ? 1 : 2).printf(remove_err.message));
+                !multiple ? 1 : 2).printf(remove_err.message));
         }
-    }
-    
-    private void on_remove_recurring_all() {
-        remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
-    }
-    
-    private void on_remove_recurring_this() {
-        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS);
-    }
-    
-    private void on_remove_recurring_this_and_following() {
-        remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_FUTURE);
     }
 }
 
