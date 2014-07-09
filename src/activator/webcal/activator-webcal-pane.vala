@@ -46,7 +46,7 @@ internal class WebCalActivatorPane : Gtk.Grid, Toolkit.Card {
             BindingFlags.SYNC_CREATE, on_entry_changed);
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
     }
     
     private bool on_entry_changed(Binding binding, Value source_value, ref Value target_value) {

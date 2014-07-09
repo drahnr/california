@@ -76,7 +76,7 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
         calendar_combo_box.active = 0;
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
     }
     
     [GtkCallback]

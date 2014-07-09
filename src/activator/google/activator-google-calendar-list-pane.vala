@@ -67,7 +67,7 @@ public class GoogleCalendarListPane : Gtk.Grid, Toolkit.Card {
         return label;
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
         Message? feeds = message as Message;
         assert(feeds != null);
         

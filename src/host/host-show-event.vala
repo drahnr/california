@@ -63,7 +63,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         Calendar.System.instance.today_changed.disconnect(build_display);
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
         if (message == null)
             return;
         

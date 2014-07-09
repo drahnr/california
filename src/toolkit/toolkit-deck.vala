@@ -80,7 +80,7 @@ public class Deck : Gtk.Stack {
     private void on_child_to_top() {
         // disconnect from previous top card and push onto nav stack
         if (top != null) {
-            top.jump_to_card.disconnect(on_jump_to_card);
+            top.jump_to_card.disconnect(on_jump_to_card_instance);
             top.jump_to_card_by_name.disconnect(on_jump_to_card_by_name);
             top.jump_back.disconnect(on_jump_back);
             top.jump_home.disconnect(on_jump_home);
@@ -95,7 +95,7 @@ public class Deck : Gtk.Stack {
         // make new visible child top Card and connect to its signals
         top = visible_child as Card;
         if (top != null) {
-            top.jump_to_card.connect(on_jump_to_card);
+            top.jump_to_card.connect(on_jump_to_card_instance);
             top.jump_to_card_by_name.connect(on_jump_to_card_by_name);
             top.jump_back.connect(on_jump_back);
             top.jump_home.connect(on_jump_home);
@@ -151,7 +151,7 @@ public class Deck : Gtk.Stack {
         
         if (set_home_visible && home != null) {
             set_visible_child(home);
-            home.jumped_to(null, null);
+            home.jumped_to(null, Card.Jump.HOME, null);
         }
     }
     
@@ -187,7 +187,7 @@ public class Deck : Gtk.Stack {
         if (displaying && top == null && home != null) {
             navigation_stack.clear();
             set_visible_child(home);
-            home.jumped_to(null, null);
+            home.jumped_to(null, Card.Jump.HOME, null);
         }
     }
     
@@ -223,10 +223,10 @@ public class Deck : Gtk.Stack {
         navigation_stack.clear();
         
         set_visible_child(home);
-        home.jumped_to(null, strip_null_value(message));
+        home.jumped_to(null, Card.Jump.HOME, strip_null_value(message));
     }
     
-    private void on_jump_to_card(Card card, Card next, Value? message) {
+    private void on_jump_to_card(Card card, Card next, Card.Jump reason, Value? message) {
         // do nothing if already visible
         if (get_visible_child() == next) {
             debug("Already showing card %s", next.card_id);
@@ -242,13 +242,17 @@ public class Deck : Gtk.Stack {
         }
         
         set_visible_child(next);
-        next.jumped_to(card, strip_null_value(message));
+        next.jumped_to(card, reason, strip_null_value(message));
+    }
+    
+    private void on_jump_to_card_instance(Card card, Card next, Value? message) {
+        on_jump_to_card(card, next, Card.Jump.DIRECT, message);
     }
     
     private void on_jump_to_card_by_name(Card card, string name, Value? message) {
         Card? next = names.get(name);
         if (next != null)
-            on_jump_to_card(card, next, message);
+            on_jump_to_card(card, next, Card.Jump.DIRECT, message);
         else
             GLib.message("Card %s not found in Deck", name);
     }
@@ -256,7 +260,7 @@ public class Deck : Gtk.Stack {
     private void on_jump_back(Card card) {
         // if still not empty, next card is "back", so pop that off and jump to it
         if (!navigation_stack.is_empty)
-            on_jump_to_card(card, navigation_stack.poll_head(), null);
+            on_jump_to_card(card, navigation_stack.poll_head(), Card.Jump.BACK, null);
     }
     
     private void on_jump_home(Card card) {
@@ -264,7 +268,7 @@ public class Deck : Gtk.Stack {
         navigation_stack.clear();
         
         if (home != null)
-            on_jump_to_card(card, home, null);
+            on_jump_to_card(card, home, Card.Jump.HOME, null);
         else
             message("No home card in Deck");
     }

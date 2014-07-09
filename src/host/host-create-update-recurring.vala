@@ -21,7 +21,17 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
     public CreateUpdateRecurring() {
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
+    }
+    
+    [GtkCallback]
+    private void on_cancel_button_clicked() {
+        jump_back();
+    }
+    
+    [GtkCallback]
+    private void on_ok_button_clicked() {
+        jump_back();
     }
 }
 

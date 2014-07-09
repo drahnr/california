@@ -104,12 +104,15 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         update_controls();
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
-        if (message != null) {
-            event = message as Component.Event;
-            assert(event != null);
-        } else {
-            event = new Component.Event.blank();
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
+        // if jumping back, message is null but want to keep using current Event
+        if (reason != Toolkit.Card.Jump.BACK) {
+            if (message != null) {
+                event = message as Component.Event;
+                assert(event != null);
+            } else {
+                event = new Component.Event.blank();
+            }
         }
         
         update_controls();

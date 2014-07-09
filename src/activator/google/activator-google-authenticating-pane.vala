@@ -56,7 +56,7 @@ public class GoogleAuthenticatingPane : Gtk.Grid, Toolkit.Card {
             app_id = "yorba-california-%s".printf(Application.VERSION);
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
         Message? credentials = message as Message;
         assert(credentials != null);
         

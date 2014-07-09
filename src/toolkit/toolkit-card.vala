@@ -15,6 +15,30 @@ namespace California.Toolkit {
 
 public interface Card : Gtk.Widget {
     /**
+     * Enumerates the various reasons a {@link Card} may be jumped to.
+     */
+    public enum Jump {
+        /**
+         * The {@link Card} was jumped to because it's home and {@link jump_home} was fired by
+         * another Card.
+         */
+        HOME,
+        /**
+         * The {@link Card} was jumped to because another Card fired {@link jump_back} and this is
+         * the previous Card in the {@link Deck}.
+         */
+        BACK,
+        /**
+         * The {@link Card} was jumped directly to by another Card, either by {@link card_id} or
+         * by an object instance.
+         *
+         * @see jump_to_card
+         * @see jump_to_card_by_name
+         */
+        DIRECT
+    }
+    
+    /**
      * Each {@link Card} has its own identifier that should be unique within the {@link Deck}.
      *
      * In the Gtk.Stack, this is its name.
@@ -124,7 +148,9 @@ public interface Card : Gtk.Widget {
      * the Deck.
      *
      * message may be null even if the Card expects one; generally this means {@link jump_back}
-     * or {@link jump_home} was invoked, resulting in this Card being activated.
+     * or {@link jump_home} was invoked, resulting in this Card being activated.  The supplied
+     * {@link Jump} reason is useful for context.  There are code paths where {@link Jump.HOME}
+     * accepts a message; {@link Jump.BACK} will never supply a message.
      *
      * Due to some mechanism inside of GSignal or Vala, it's possible for a caller to pass null
      * that gets translated into a Value object holding a null pointer.  Deck will watch for this
@@ -137,7 +163,8 @@ public interface Card : Gtk.Widget {
      * This is called before dealing with {@link default_widget} and {@link initial_focus}, so
      * changes to those properties in this call, if need be.
      */
-    public abstract void jumped_to(Card? from, Value? message);
+    // TODO: Use a JumpContext object instead.
+    public abstract void jumped_to(Card? from, Jump reason, Value? message);
     
     /**
      * Dismiss the {@link Deck} due to the user requesting it be closed or cancelled.

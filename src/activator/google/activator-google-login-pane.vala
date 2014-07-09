@@ -34,7 +34,7 @@ internal class GoogleLoginPane : Gtk.Grid, Toolkit.Card {
             BindingFlags.SYNC_CREATE, on_entry_changed);
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? msg) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? msg) {
         password_entry.text = "";
     }
     
