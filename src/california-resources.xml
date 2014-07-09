@@ -22,6 +22,9 @@
         <file compressed="false">rc/create-update-event.ui</file>
     </gresource>
     <gresource prefix="/org/yorba/california">
+        <file compressed="false">rc/create-update-recurring.ui</file>
+    </gresource>
+    <gresource prefix="/org/yorba/california">
         <file compressed="true">rc/google-authenticating.ui</file>
     </gresource>
     <gresource prefix="/org/yorba/california">

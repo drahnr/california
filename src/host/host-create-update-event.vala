@@ -231,6 +231,11 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     [GtkCallback]
+    private void on_recurring_button_clicked() {
+        jump_to_card_by_name(CreateUpdateRecurring.ID, event);
+    }
+    
+    [GtkCallback]
     private void on_accept_clicked() {
         if (calendar_model.active == null)
             return;
