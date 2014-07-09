@@ -100,6 +100,10 @@ internal class DayPane : Pane, Common.InstanceContainer {
         if (!days_events.add(event))
             return;
         
+        event.notify[Component.Event.PROP_SUMMARY].connect(queue_draw);
+        event.notify[Component.Event.PROP_DATE_SPAN].connect(on_update_date_time);
+        event.notify[Component.Event.PROP_EXACT_TIME_SPAN].connect(on_update_date_time);
+        
         queue_draw();
     }
     
@@ -107,11 +111,27 @@ internal class DayPane : Pane, Common.InstanceContainer {
         if (!days_events.remove(event))
             return;
         
+        event.notify[Component.Event.PROP_SUMMARY].disconnect(queue_draw);
+        event.notify[Component.Event.PROP_DATE_SPAN].disconnect(on_update_date_time);
+        event.notify[Component.Event.PROP_EXACT_TIME_SPAN].disconnect(on_update_date_time);
+        
         queue_draw();
     }
     
     public void clear_events() {
         days_events.clear();
+        
+        queue_draw();
+    }
+    
+    private void on_update_date_time(Object object, ParamSpec param) {
+        Component.Event event = (Component.Event) object;
+        
+        // remove entirely if not in this date any more, otherwise remove and re-add to re-sort
+        if (!(date in event.get_event_date_span(Calendar.System.timezone)))
+            remove_event(event);
+        else if (days_events.remove(event))
+            days_events.add(event);
         
         queue_draw();
     }
