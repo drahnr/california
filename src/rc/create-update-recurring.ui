@@ -12,7 +12,7 @@
     <property name="row_spacing">6</property>
     <child>
       <object class="GtkCheckButton" id="make_recurring_checkbutton">
-        <property name="label" translatable="yes">_Repeating event:</property>
+        <property name="label" translatable="yes">_Repeating event</property>
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">False</property>
@@ -40,7 +40,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="xalign">1</property>
-            <property name="label" translatable="yes">Re_peats:</property>
+            <property name="label" translatable="yes">Re_peats</property>
             <property name="use_underline">True</property>
             <style>
               <class name="dim-label"/>
@@ -58,7 +58,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="xalign">1</property>
-            <property name="label" translatable="yes">_Every:</property>
+            <property name="label" translatable="yes">_Every</property>
             <property name="use_underline">True</property>
             <style>
               <class name="dim-label"/>
@@ -76,7 +76,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="xalign">1</property>
-            <property name="label" translatable="yes">En_ds:</property>
+            <property name="label" translatable="yes">En_ds</property>
             <property name="use_underline">True</property>
             <style>
               <class name="dim-label"/>
@@ -94,7 +94,7 @@
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="xalign">1</property>
-            <property name="label" translatable="yes">_Starts:</property>
+            <property name="label" translatable="yes">_Starts</property>
             <property name="use_underline">True</property>
             <style>
               <class name="dim-label"/>
@@ -108,11 +108,11 @@
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="label5">
+          <object class="GtkLabel" id="on_days_label">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="xalign">1</property>
-            <property name="label" translatable="yes">_On days:</property>
+            <property name="label" translatable="yes">_On days</property>
             <property name="use_underline">True</property>
             <style>
               <class name="dim-label"/>
@@ -126,19 +126,340 @@
           </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkComboBoxText" id="repeats_combobox">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="halign">start</property>
+            <items>
+              <item id="0" translatable="yes">Daily</item>
+              <item id="1" translatable="yes">Weekly</item>
+              <item id="2" translatable="yes">Day of the week</item>
+              <item id="3" translatable="yes">Day of the month</item>
+              <item id="4" translatable="yes">Yearly</item>
+            </items>
+            <signal name="changed" handler="on_repeats_combobox_changed" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">0</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkBox" id="on_days_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="spacing">8</property>
+            <child>
+              <object class="GtkCheckButton" id="sunday_checkbutton">
+                <property name="label" translatable="yes">_Sun</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="monday_checkbutton">
+                <property name="label" translatable="yes">_Mon</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="tuesday_checkbutton">
+                <property name="label" translatable="yes">_Tues</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="wednesday_checkbutton">
+                <property name="label" translatable="yes">_Wed</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="thursday_checkbutton">
+                <property name="label" translatable="yes">T_hu</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="friday_checkbutton">
+                <property name="label" translatable="yes">_Fri</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="saturday_checkbutton">
+                <property name="label" translatable="yes">S_at</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">6</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">2</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkBox" id="box1">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="spacing">16</property>
+            <child>
+              <object class="GtkRadioButton" id="never_radiobutton">
+                <property name="label" translatable="yes">_Never</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">False</property>
+                <property name="use_underline">True</property>
+                <property name="xalign">0</property>
+                <property name="active">True</property>
+                <property name="draw_indicator">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox" id="on_box">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="spacing">4</property>
+                <child>
+                  <object class="GtkRadioButton" id="ends_on_radiobutton">
+                    <property name="label" translatable="yes" comments="As in, an event &quot;ends on&quot; a date">_On</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="use_underline">True</property>
+                    <property name="xalign">0</property>
+                    <property name="draw_indicator">True</property>
+                    <property name="group">never_radiobutton</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="end_date_button">
+                    <property name="label">(none)</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="on_date_button_clicked" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkBox" id="box2">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="spacing">4</property>
+                <child>
+                  <object class="GtkRadioButton" id="after_radiobutton">
+                    <property name="label" translatable="yes">Aft_er</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="use_underline">True</property>
+                    <property name="xalign">0</property>
+                    <property name="active">True</property>
+                    <property name="draw_indicator">True</property>
+                    <property name="group">never_radiobutton</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="after_entry">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="max_length">4</property>
+                    <property name="activates_default">True</property>
+                    <property name="width_chars">5</property>
+                    <property name="input_purpose">number</property>
+                    <signal name="changed" handler="on_after_entry_changed" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+                    <signal name="insert-text" handler="on_insert_text_numbers_only" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="after_label">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">events</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">4</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkButton" id="start_date_button">
+            <property name="label">(none)</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="halign">start</property>
+            <signal name="clicked" handler="on_date_button_clicked" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">3</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
         </child>
         <child>
-          <placeholder/>
+          <object class="GtkBox" id="every_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="spacing">4</property>
+            <child>
+              <object class="GtkEntry" id="every_entry">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="max_length">4</property>
+                <property name="activates_default">True</property>
+                <property name="width_chars">5</property>
+                <property name="input_purpose">number</property>
+                <signal name="changed" handler="on_every_entry_changed" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+                <signal name="insert-text" handler="on_insert_text_numbers_only" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="every_label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label">(none)</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+            <property name="width">1</property>
+            <property name="height">1</property>
+          </packing>
         </child>
       </object>
       <packing>
@@ -204,4 +525,41 @@
       </packing>
     </child>
   </template>
+  <object class="GtkBox" id="ends_on_box">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="spacing">4</property>
+    <child>
+      <object class="GtkRadioButton" id="ends_on_radiobutton1">
+        <property name="label" translatable="yes" comments="As in, an event &quot;ends on&quot; a date">_On</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">False</property>
+        <property name="use_underline">True</property>
+        <property name="xalign">0</property>
+        <property name="active">True</property>
+        <property name="draw_indicator">True</property>
+        <property name="group">never_radiobutton</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="end_date_button1">
+        <property name="label">(none)</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+        <signal name="clicked" handler="on_date_button_clicked" object="CaliforniaHostCreateUpdateRecurring" swapped="no"/>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">1</property>
+      </packing>
+    </child>
+  </object>
 </interface>

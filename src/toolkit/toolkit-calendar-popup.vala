@@ -25,11 +25,17 @@ public class CalendarPopup : Popup {
     /**
      * Fired when the user selects a day of a month and year.
      *
-     * In current implementation the {@link Popup} will be {@link dismissed} with any selection.
-     * Future work may allow the user to single-click on a day but require another action to
-     * dismiss the Popup.  Best for users to subscribe to {@link dismissed} as well as this signal.
+     * @see date_activated
      */
     public signal void date_selected(Calendar.Date date);
+    
+    /**
+     * Fired when the user activates (double-clicks) a day of a month and year.
+     *
+     * Note that a double-click will result in {@link date_selected} followed by this signal
+     * followed by {@link dismissed}.
+     */
+    public signal void date_activated(Calendar.Date date);
     
     /**
      * inheritDoc
@@ -41,16 +47,17 @@ public class CalendarPopup : Popup {
         calendar.month = initial_date.month.value - 1;
         calendar.year = initial_date.year.value;
         
-        calendar.day_selected.connect(on_day_selected);
+        calendar.day_selected.connect(() => {
+            on_day_selected(false);
+        });
         calendar.day_selected_double_click.connect(() => {
-            on_day_selected();
-            dismiss();
+            on_day_selected(true);
         });
         
         add(calendar);
     }
     
-    private void on_day_selected() {
+    private void on_day_selected(bool activated) {
         Calendar.Date date;
         try {
             date = new Calendar.Date(
@@ -65,6 +72,11 @@ public class CalendarPopup : Popup {
         }
         
         date_selected(date);
+        
+        if (activated) {
+            date_activated(date);
+            dismiss();
+        }
     }
 }
 
