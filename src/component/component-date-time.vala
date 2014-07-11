@@ -126,38 +126,44 @@ public class DateTime : BaseObject, Gee.Hashable<DateTime>, Gee.Comparable<DateT
     
     /**
      * Creates a new {@link DateTime} for a component's RRULE UNTIL property.
+     *
+     * Strict will attempt to adhere to the MUSTs and SHALLs present in the iCal specification
+     * regarding RRULE's UNTIL property. See [[https://tools.ietf.org/html/rfc5545#section-3.3.10]]
      */
-    public DateTime.rrule_until(iCal.icalrecurrencetype rrule, DateTime dtstart) throws ComponentError {
+    public DateTime.rrule_until(iCal.icalrecurrencetype rrule, DateTime dtstart, bool strict)
+        throws ComponentError {
         if (iCal.icaltime_is_null_time(rrule.until) != 0)
             throw new ComponentError.INVALID("DATE-TIME for RRULE UNTIL is null time");
         
-        if (iCal.icaltime_is_valid_time(rrule.until) != 0)
+        if (iCal.icaltime_is_valid_time(rrule.until) == 0)
             throw new ComponentError.INVALID("DATE-TIME for RRULE UNTIL is invalid");
         
         bool until_is_date = (iCal.icaltime_is_date(rrule.until) != 0);
         bool until_is_utc = (iCal.icaltime_is_utc(rrule.until) != 0);
         
-        // "The value of the UNTIL rule part MUST have the same value type as the 'DTSTART'
-        // property."
-        if (dtstart.is_date != until_is_date)
-            throw new ComponentError.INVALID("RRULE UNTIL and DTSTART must be of same type (DATE/DATE-TIME)");
-        
-        // "If the 'DTSTART' property is specified as a date with local time, then the UNTIL rule
-        // part MUST also be specified as a date with local time."
-        if (dtstart.is_utc != until_is_utc)
-            throw new ComponentError.INVALID("RRULE UNTIL and DTSTART must be of same time type (UTC/local)");
-        
-        // "if the 'DTSTART' property is specified as a date with UTC time or a date with local time
-        // and a time zone reference, then the UNTIL rule part MUST be specified as a date with
-        // UTC time."
-        if (dtstart.is_date || (!dtstart.is_utc && dtstart.zone != null)) {
-            if (!until_is_utc)
-                throw new ComponentError.INVALID("RRULE UNTIL must be UTC for DTSTART DATE or w/ time zone");
+        if (strict) {
+            // "The value of the UNTIL rule part MUST have the same value type as the 'DTSTART'
+            // property."
+            if (dtstart.is_date != until_is_date)
+                throw new ComponentError.INVALID("RRULE UNTIL and DTSTART must be of same type (DATE/DATE-TIME)");
+            
+            // "If the 'DTSTART' property is specified as a date with local time, then the UNTIL rule
+            // part MUST also be specified as a date with local time."
+            if (dtstart.is_utc != until_is_utc)
+                throw new ComponentError.INVALID("RRULE UNTIL and DTSTART must be of same time type (UTC/local)");
+            
+            // "if the 'DTSTART' property is specified as a date with UTC time or a date with local time
+            // and a time zone reference, then the UNTIL rule part MUST be specified as a date with
+            // UTC time."
+            if (dtstart.is_date || (!dtstart.is_utc && dtstart.zone != null)) {
+                if (!until_is_utc)
+                    throw new ComponentError.INVALID("RRULE UNTIL must be UTC for DTSTART DATE or w/ time zone");
+            }
+            
+            // "If specified as a DATE-TIME value, then it MUST be specified in a UTC time format."
+            if (!until_is_date && !until_is_utc)
+                throw new ComponentError.INVALID("RRULE DATE-TIME UNTIL must be UTC");
         }
-        
-        // "If specified as a DATE-TIME value, then it MUST be specified in a UTC time format."
-        if (!until_is_date && !until_is_utc)
-            throw new ComponentError.INVALID("RRULE DATE-TIME UNTIL must be UTC");
         
         kind = iCal.icalproperty_kind.RRULE_PROPERTY;
         dt = rrule.until;

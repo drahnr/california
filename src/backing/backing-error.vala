@@ -22,7 +22,11 @@ public errordomain BackingError {
     /**
      * The method or object is unavailable due to a state change (not open or removed).
      */
-    UNAVAILABLE
+    UNAVAILABLE,
+    /**
+     * The object or identifier is not recognized.
+     */
+    UNKNOWN
 }
 
 }

@@ -40,15 +40,18 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
     
     private Toolkit.ComboBoxTextModel<Backing.CalendarSource> model;
     
-    public QuickCreateEvent(Component.Event? initial) {
-        event = initial;
+    public QuickCreateEvent() {
+    }
+    
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
+        event = message as Component.Event;
         
         // if initial date/times supplied, reveal to the user and change the example
         string eg;
-        if (initial != null && (initial.date_span != null || initial.exact_time_span != null)) {
+        if (event != null && (event.date_span != null || event.exact_time_span != null)) {
             when_box.visible = true;
-            when_text_label.label = initial.get_event_time_pretty_string(Calendar.Timezone.local);
-            if (initial.date_span != null)
+            when_text_label.label = event.get_event_time_pretty_string(Calendar.Timezone.local);
+            if (event.date_span != null)
                 eg = _("Example: Dinner at Tadich Grill 7:30pm");
             else
                 eg = _("Example: Dinner at Tadich Grill");
@@ -74,9 +77,6 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
         
         // make first item active
         calendar_combo_box.active = 0;
-    }
-    
-    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
     }
     
     [GtkCallback]

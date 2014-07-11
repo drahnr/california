@@ -226,6 +226,22 @@ internal class EdsCalendarSource : CalendarSource {
         yield client.modify_object(ical_component, E.CalObjModType.THIS, cancellable);
     }
     
+    public override async Component.Instance fetch_master_component_async(Component.UID uid,
+        Cancellable? cancellable = null) throws Error {
+        // get the master instance for this UID
+        iCal.icalcomponent ical_component;
+        yield client.get_object(uid.value, null, cancellable, out ical_component);
+        
+        // convert into an Instance and return
+        Component.Instance? instance = Component.Instance.convert(this, ical_component);
+        if (instance == null) {
+            throw new BackingError.UNKNOWN("UID %s is unknown to calendar %s", uid.to_string(),
+                to_string());
+        }
+        
+        return instance;
+    }
+    
     public override async void import_icalendar_async(Component.iCalendar ical, Cancellable? cancellable = null)
         throws Error {
         check_open();

@@ -71,8 +71,9 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
      * Returns true if the {@link Recurrable} is in fact a recurring instance.
      *
      * @see rid
+     * @see Backing.CalendarSource.fetch_master_component_async
      */
-    public bool is_recurring { get { return rid != null; } }
+    public bool is_recurring_instance { get { return rid != null; } }
     
     /**
      * The SEQUENCE of a VEVENT, VTODO, or VJOURNAL.

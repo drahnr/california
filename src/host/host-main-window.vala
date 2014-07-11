@@ -424,7 +424,7 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
     
     private void quick_create_event(Component.Event? initial, Gtk.Widget relative_to, Gdk.Point? for_location) {
-        QuickCreateEvent quick_create = new QuickCreateEvent(initial);
+        QuickCreateEvent quick_create = new QuickCreateEvent();
         
         CreateUpdateEvent create_update = new CreateUpdateEvent();
         create_update.is_update = false;
@@ -436,6 +436,9 @@ public class MainWindow : Gtk.ApplicationWindow {
             iterate<Toolkit.Card>(quick_create, create_update, create_update_recurring)
             .to_array_list()
         );
+        
+        // initialize the Deck with the initial event (if any)
+        deck.go_home(initial);
         
         show_deck(relative_to, for_location, deck);
     }

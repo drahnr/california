@@ -137,7 +137,7 @@ public class RecurrenceRule : BaseObject {
         this.freq = freq;
     }
     
-    internal RecurrenceRule.from_ical(iCal.icalcomponent ical_component) throws Error {
+    internal RecurrenceRule.from_ical(iCal.icalcomponent ical_component, bool strict) throws Error {
         // need DTSTART for timezone purposes
         DateTime dtstart = new DateTime(ical_component, iCal.icalproperty_kind.DTSTART_PROPERTY);
         
@@ -155,7 +155,7 @@ public class RecurrenceRule : BaseObject {
         if (rrule.count > 0) {
             set_recurrence_count(rrule.count);
         } else {
-            Component.DateTime date_time = new DateTime.rrule_until(rrule, dtstart);
+            Component.DateTime date_time = new DateTime.rrule_until(rrule, dtstart, strict);
             if (date_time.is_date)
                 set_recurrence_end_date(date_time.to_date());
             else
@@ -250,6 +250,23 @@ public class RecurrenceRule : BaseObject {
         count = 0;
         
         thaw_notify();
+    }
+    
+    /**
+     * Returns the UNTIL property as a {@link Calendar.Date}.
+     *
+     * If {@link until_exact_time} is set, only the Date portion is returned.
+     *
+     * @returns null if neither {@link until_date} or until_exact_time is set.
+     */
+    public Calendar.Date? get_recurrence_end_date() {
+        if (until_date != null)
+            return until_date;
+        
+        if (until_exact_time != null)
+            return new Calendar.Date.from_exact_time(until_exact_time);
+        
+        return null;
     }
     
     /**

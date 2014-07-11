@@ -163,7 +163,7 @@ public class Event : Instance, Gee.Comparable<Event> {
         }
         
         try {
-            make_recurring(new RecurrenceRule.from_ical(ical_component));
+            make_recurring(new RecurrenceRule.from_ical(ical_component, false));
         } catch (ComponentError comperr) {
             // ignored; generally means no RRULE in component
         }
@@ -438,12 +438,10 @@ public class Event : Instance, Gee.Comparable<Event> {
         if (compare != 0)
             return compare;
         
-        // if recurring, go by sequence number, as the UID and RID are the same for all instances
-        if (is_recurring) {
-            compare = sequence - other.sequence;
-            if (compare != 0)
-                return compare;
-        }
+        // use sequence number if available
+        compare = sequence - other.sequence;
+        if (compare != 0)
+            return compare;
         
         // stabilize with UIDs
         return uid.compare_to(other.uid);
@@ -457,10 +455,10 @@ public class Event : Instance, Gee.Comparable<Event> {
         if (this == other_event)
             return true;
         
-        if (is_recurring != other_event.is_recurring)
+        if (is_recurring_instance != other_event.is_recurring_instance)
             return false;
         
-        if (is_recurring && !rid.equal_to(other_event.rid))
+        if (is_recurring_instance && !rid.equal_to(other_event.rid))
             return false;
         
         if (sequence != other_event.sequence)

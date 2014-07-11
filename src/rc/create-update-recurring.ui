@@ -16,6 +16,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="receives_default">False</property>
+        <property name="halign">start</property>
         <property name="valign">start</property>
         <property name="use_underline">True</property>
         <property name="xalign">0</property>
@@ -33,8 +34,8 @@
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="margin_left">16</property>
-        <property name="row_spacing">6</property>
-        <property name="column_spacing">6</property>
+        <property name="row_spacing">8</property>
+        <property name="column_spacing">8</property>
         <child>
           <object class="GtkLabel" id="label1">
             <property name="visible">True</property>
@@ -343,7 +344,7 @@
                 <property name="spacing">4</property>
                 <child>
                   <object class="GtkRadioButton" id="after_radiobutton">
-                    <property name="label" translatable="yes">Aft_er</property>
+                    <property name="label" translatable="yes" comments="As in, &quot;After n events&quot;">Aft_er</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">False</property>
@@ -380,7 +381,7 @@
                   <object class="GtkLabel" id="after_label">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">events</property>
+                    <property name="label">(none)</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>

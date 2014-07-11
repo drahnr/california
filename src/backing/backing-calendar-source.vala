@@ -95,6 +95,23 @@ public abstract class CalendarSource : Source {
         AffectedInstances affected, Cancellable? cancellable = null) throws Error;
     
     /**
+     * Fetches the master component of an {@link Component.Instance}.
+     *
+     * If an Instance is recurring, {@link CalendarSourceSubscription} produces individual instances
+     * of those recurrences (which therefore lack the rules and information that produce them).
+     * This call allows for the original (or master) component to be retrieved.
+     *
+     * If the instance is not recurring, the returned Instance will be identical (or near-identical)
+     * to the one produced by CalendarSourceSubscription.
+     *
+     * @see Component.Instance.is_recurring_instance
+     * @throws An Error if the {@link Component.UID} is unknown to the {@link CalendarSource},
+     * as well as for the sundry I/O errors and such.
+     */
+    public abstract async Component.Instance fetch_master_component_async(Component.UID uid,
+        Cancellable? cancellable = null) throws Error;
+    
+    /**
      * Imports a {@link Component.iCalendar} into the {@link CalendarSource}.
      */
     public abstract async void import_icalendar_async(Component.iCalendar ical, Cancellable? cancellable = null)
