@@ -20,6 +20,9 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     private const int END_HOUR = 23;
     private const int MIN_DIVISIONS = 15;
     
+    private const string FAMILY_NORMAL = "normal";
+    private const string FAMILY_RECURRING = "recurring";
+    
     public string card_id { get { return ID; } }
     
     public string? title { get { return null; } }
@@ -56,7 +59,7 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     private Gtk.ComboBoxText calendar_combo;
     
     [GtkChild]
-    private Gtk.Button accept_button;
+    private Gtk.Box rotating_button_box_container;
     
     public Calendar.DateSpan selected_date_span { get; set; }
     
@@ -68,6 +71,14 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     private Toolkit.ComboBoxTextModel<Backing.CalendarSource> calendar_model;
     private Gtk.Button? last_date_button_touched = null;
     private bool both_date_buttons_touched = false;
+    
+    private Toolkit.RotatingButtonBox rotating_button_box = new Toolkit.RotatingButtonBox();
+    
+    private Gtk.Button accept_button = new Gtk.Button();
+    private Gtk.Button cancel_button = new Gtk.Button.with_mnemonic(_("_Cancel"));
+    private Gtk.Button update_all_button = new Gtk.Button.with_mnemonic(_("Update A_ll Events"));
+    private Gtk.Button update_this_button = new Gtk.Button.with_mnemonic(_("Update _This Event"));
+    private Gtk.Button cancel_recurring_button = new Gtk.Button.with_mnemonic(_("_Cancel"));
     
     public CreateUpdateEvent() {
         // when selected_date_span updates, update date buttons as well
@@ -100,6 +111,31 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             
             calendar_model.add(calendar_source);
         }
+        
+        accept_button.get_style_context().add_class("suggested-action");
+        
+        accept_button.clicked.connect(on_accept_button_clicked);
+        cancel_button.clicked.connect(on_cancel_button_clicked);
+        update_all_button.clicked.connect(on_update_all_button_clicked);
+        update_this_button.clicked.connect(on_update_this_button_clicked);
+        cancel_recurring_button.clicked.connect(on_cancel_recurring_button_clicked);
+        
+        rotating_button_box.pack_end(FAMILY_NORMAL, cancel_button);
+        rotating_button_box.pack_end(FAMILY_NORMAL, accept_button);
+        
+        rotating_button_box.pack_end(FAMILY_RECURRING, cancel_recurring_button);
+        rotating_button_box.pack_end(FAMILY_RECURRING, update_all_button);
+        rotating_button_box.pack_end(FAMILY_RECURRING, update_this_button);
+        
+        // The cancel-recurring-update button looks big compared to other buttons, so allow for the
+        // ButtonBox to reduce it in size
+        rotating_button_box.get_family_container(FAMILY_RECURRING).child_set_property(cancel_recurring_button,
+            "non-homogeneous", true);
+        
+        rotating_button_box.expand = true;
+        rotating_button_box.halign = Gtk.Align.FILL;
+        rotating_button_box.valign = Gtk.Align.END;
+        rotating_button_box_container.add(rotating_button_box);
         
         update_controls();
     }
@@ -193,6 +229,10 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         description_textview.buffer.text = event.description ?? "";
         
         accept_button.label = is_update ? _("_Update") : _("C_reate");
+        accept_button.use_underline = true;
+        
+        rotating_button_box.family = FAMILY_NORMAL;
+        
         original_calendar_source = event.calendar_source;
     }
     
@@ -238,10 +278,16 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         jump_to_card_by_name(CreateUpdateRecurring.ID, event);
     }
     
-    [GtkCallback]
-    private void on_accept_clicked() {
+    private void on_accept_button_clicked() {
         if (calendar_model.active == null)
             return;
+        
+        // if updating a recurring event, need to ask about update scope
+        if (event.is_recurring_instance && is_update) {
+            rotating_button_box.family = FAMILY_RECURRING;
+            
+            return;
+        }
         
         event.calendar_source = calendar_model.active;
         event.summary = summary_entry.text;
@@ -271,9 +317,18 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             create_event_async.begin(null);
     }
     
-    [GtkCallback]
     private void on_cancel_button_clicked() {
-        jump_home_or_user_closed();
+        notify_user_closed();
+    }
+    
+    private void on_update_all_button_clicked() {
+    }
+    
+    private void on_update_this_button_clicked() {
+    }
+    
+    private void on_cancel_recurring_button_clicked() {
+        rotating_button_box.family = FAMILY_NORMAL;
     }
     
     private async void create_event_async(Cancellable? cancellable) {
