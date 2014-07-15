@@ -29,6 +29,7 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public const string PROP_DTSTAMP = "dtstamp";
     public const string PROP_UID = "uid";
     public const string PROP_ICAL_COMPONENT = "ical-component";
+    public const string PROP_RRULE = "rrule";
     public const string PROP_RID = "rid";
     public const string PROP_SEQUENCE = "sequence";
     
@@ -59,6 +60,15 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
      * This element is immutable, as it represents the identify of this Instance.
      */
     public UID uid { get; private set; }
+    
+    /**
+     * {@link RecurrenceRule} (RRULE) for {@link Instance}.
+     *
+     * If the RecurrenceRule is itself altered, that signal is reflected to {@link altered}.
+     *
+     * @see make_recurring
+     */
+    public RecurrenceRule? rrule { get; private set; default = null; }
     
     /**
      * The RECURRENCE-ID of a recurring component.
@@ -252,6 +262,12 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         
         sequence = ical_component.get_sequence();
         
+        try {
+            make_recurring(new RecurrenceRule.from_ical(ical_component, false));
+        } catch (ComponentError comperr) {
+            // ignored; generally means no RRULE in component
+        }
+        
         // save own copy of component; no ownership transferrance w/ current bindings
         if (_ical_component != ical_component)
             _ical_component = ical_component.clone();
@@ -275,6 +291,15 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
                 ical_component.set_sequence(sequence);
             break;
             
+            case PROP_RRULE:
+                // always remove existing RRULE
+                remove_all_properties(iCal.icalproperty_kind.RRULE_PROPERTY);
+                
+                // add new one, if added
+                if (rrule != null)
+                    rrule.add_to_ical(ical_component);
+            break;
+            
             default:
                 altered = false;
             break;
@@ -282,6 +307,34 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         
         if (altered)
             notify_altered(false);
+    }
+    
+    /**
+     * Add a {@link RecurrenceRule} to the {@link Instance}.
+     *
+     * Pass null to make the Instance non-recurring.
+     */
+    public void make_recurring(RecurrenceRule? rrule) {
+        if (this.rrule != null) {
+            this.rrule.notify.disconnect(on_rrule_updated);
+            this.rrule.by_rule_updated.disconnect(on_rrule_updated);
+        }
+        
+        if (rrule != null) {
+            rrule.notify.connect(on_rrule_updated);
+            rrule.by_rule_updated.connect(on_rrule_updated);
+        }
+        
+        this.rrule = rrule;
+    }
+    
+    private void on_rrule_updated() {
+        // remove old property, replace with new one
+        remove_all_properties(iCal.icalproperty_kind.RRULE_PROPERTY);
+        rrule.add_to_ical(ical_component);
+        
+        // count this as an alteration
+        notify_altered(false);
     }
     
     /**
@@ -359,21 +412,34 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     }
     
     /**
-     * Equality is defined as {@link Component.Instance}s having the same UID.
+     * Equality is defined as {@link Component.Instance}s having the same {@link uid}, {@link rid},
+     * and {@link sequence}.
      *
      * Subclasses should override this and {@link hash} if more definite equality is necessary.
      */
     public virtual bool equal_to(Instance other) {
-        return (this != other) ? uid.equal_to(other.uid) : true;
+        if (this == other)
+            return true;
+        
+        if (is_recurring_instance != other.is_recurring_instance)
+            return false;
+        
+        if (is_recurring_instance && !rid.equal_to(other.rid))
+            return false;
+        
+        if (sequence != other.sequence)
+            return false;
+        
+        return uid.equal_to(other.uid);
     }
     
     /**
-     * Hash is calculated using the {@link Instance} {@link UID}.
+     * Hash is calculated using the {@link Instance} {@link UID}, {@link rid}, and {@link sequence}.
      *
      * Subclasses should override if they override {@link equal_to}.
      */
     public virtual uint hash() {
-        return uid.hash();
+        return uid.hash() ^ ((rid != null) ? rid.hash() : 0) ^ sequence;
     }
 }
 

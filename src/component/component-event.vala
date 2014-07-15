@@ -20,7 +20,6 @@ public class Event : Instance, Gee.Comparable<Event> {
     public const string PROP_IS_ALL_DAY = "is-all-day";
     public const string PROP_LOCATION = "location";
     public const string PROP_STATUS = "status";
-    public const string PROP_RRULE = "rrule";
     
     public enum Status {
         TENTATIVE,
@@ -85,15 +84,6 @@ public class Event : Instance, Gee.Comparable<Event> {
      * Status (confirmation) of an {@link Event}.
      */
     public Status status { get; set; default = Status.CONFIRMED; }
-    
-    /**
-     * {@link RecurrenceRule} (RRULE) for {@link Event}.
-     *
-     * If the RecurrenceRule is itself altered, that signal is reflected to {@link Instance.altered}.
-     *
-     * @see make_recurring
-     */
-    public RecurrenceRule? rrule { get; private set; default = null; }
     
     /**
      * Create an {@link Event} {@link Component} from an EDS CalComponent object.
@@ -161,12 +151,6 @@ public class Event : Instance, Gee.Comparable<Event> {
                 status = Status.CONFIRMED;
             break;
         }
-        
-        try {
-            make_recurring(new RecurrenceRule.from_ical(ical_component, false));
-        } catch (ComponentError comperr) {
-            // ignored; generally means no RRULE in component
-        }
     }
     
     private void on_notify(ParamSpec pspec) {
@@ -233,15 +217,6 @@ public class Event : Instance, Gee.Comparable<Event> {
                         ical_component.set_status(iCal.icalproperty_status.CONFIRMED);
                     break;
                 }
-            break;
-            
-            case PROP_RRULE:
-                // always remove existing RRULE
-                remove_all_properties(iCal.icalproperty_kind.RRULE_PROPERTY);
-                
-                // add new one, if added
-                if (rrule != null)
-                    rrule.add_to_ical(ical_component);
             break;
             
             default:
@@ -350,34 +325,6 @@ public class Event : Instance, Gee.Comparable<Event> {
     }
     
     /**
-     * Add a {@link RecurrenceRule} to the {@link Event}.
-     *
-     * Pass null to make Event non-recurring.
-     */
-    public void make_recurring(RecurrenceRule? rrule) {
-        if (this.rrule != null) {
-            this.rrule.notify.disconnect(on_rrule_updated);
-            this.rrule.by_rule_updated.disconnect(on_rrule_updated);
-        }
-        
-        if (rrule != null) {
-            rrule.notify.connect(on_rrule_updated);
-            rrule.by_rule_updated.connect(on_rrule_updated);
-        }
-        
-        this.rrule = rrule;
-    }
-    
-    private void on_rrule_updated() {
-        // remove old property, replace with new one
-        remove_all_properties(iCal.icalproperty_kind.RRULE_PROPERTY);
-        rrule.add_to_ical(ical_component);
-        
-        // count this as an alteration
-        notify_altered(false);
-    }
-    
-    /**
      * @inheritDoc
      */
     public override bool is_valid(bool and_useful) {
@@ -428,6 +375,13 @@ public class Event : Instance, Gee.Comparable<Event> {
         if (compare != 0)
             return compare;
         
+        // rid
+        if (rid != null && other.rid != null) {
+            compare = rid.compare_to(other.rid);
+            if (compare != 0)
+                return compare;
+        }
+        
         // summary
         compare = strcmp(summary, other.summary);
         if (compare != 0)
@@ -445,30 +399,6 @@ public class Event : Instance, Gee.Comparable<Event> {
         
         // stabilize with UIDs
         return uid.compare_to(other.uid);
-    }
-    
-    public override bool equal_to(Component.Instance other) {
-        Component.Event? other_event = other as Component.Event;
-        if (other_event == null)
-            return false;
-        
-        if (this == other_event)
-            return true;
-        
-        if (is_recurring_instance != other_event.is_recurring_instance)
-            return false;
-        
-        if (is_recurring_instance && !rid.equal_to(other_event.rid))
-            return false;
-        
-        if (sequence != other_event.sequence)
-            return false;
-        
-        return base.equal_to(other);
-    }
-    
-    public override uint hash() {
-        return uid.hash() ^ ((rid != null) ? rid.hash() : 0) ^ sequence;
     }
     
     public override string to_string() {
