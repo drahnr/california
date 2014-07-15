@@ -9,15 +9,13 @@ namespace California.Backing {
 /**
  * A subscription to an active timespan of interest of a calendar.
  *
- * CalendarSourceSubscription generates {@link Component.Instance}s of the various events in a
- * window of time in a calendar.  Note that for recurring events, there is no interface to directly
- * edit or remove the "original" iCalendar source.  Rather, the caller should update or remove
- * generated instances of that recurring event with flags to indicate how the original is to be
- * altered to match these changes.  See {@link CalendarSource} for the interface to make these
- * alterations.
+ * The subscription notifies of calendar updates via its signals.  It can list complete or partial
+ * collections of {@link Component.Instances} it has reported via those signals.
  *
- * The subscription can notify of calendar event updates and list a complete or partial collections
- * of the same.
+ * CalendarSourceSubscription generates {@link Component.Instance}s of the various events in a
+ * window of time in a calendar.  Both master instances and generated recurring instances are
+ * reported through the interface.  Operations performed on instances should be done with the
+ * subscription's {@link CalendarSource}.
  */
 
 public abstract class CalendarSourceSubscription : BaseObject {
@@ -50,20 +48,61 @@ public abstract class CalendarSourceSubscription : BaseObject {
     /**
      * Fired as existing {@link Component.Instance}s are discovered when starting a subscription.
      *
+     * Like {@link instance_added}, this is only fired for master Instances which do not
+     * generate recurring instances and generated Instances.  See {@link master_discovered} to
+     * be notified of all master Instances.
+     *
      * This is fired while {@link start} is working, either in the foreground or in the background.
      * It won't fire until start() is invoked.
+     *
+     * @see master_discovered
      */
     public signal void instance_discovered(Component.Instance instance);
     
     /**
-     * Indicates that an {@link Instance} within the {@link window} has been added to the calendar.
+     * Fired as existing master {@link Component.Instance}s are discovered when starting a
+     * subscription.
+     *
+     * This is fired for all discovered master Instances whether or not they may generate
+     * Instances for this subscription.
+     *
+     * This is fired while {@link start} is working, either in the foreground or in the background.
+     * It won't fire until start() is invoked.
+     *
+     * @see instance_discovered
+     */
+    public signal void master_discovered(Component.Instance instance);
+    
+    /**
+     * Fired when a {@link Component.Instance} within the {@link window} has been added to the
+     * {@link CalendarSource}.
+     *
+     * This is fired only for master Instances which do not generate recurring Instances and for
+     * generated Instances.  See {@link master_added} to be notified of all master Instances.
      *
      * The signal is fired for both local additions (added through this interface) and remote
      * additions.
      *
      * This signal won't fire until {@link start} is called.
+     *
+     * @see master_added
      */
     public signal void instance_added(Component.Instance instance);
+    
+    /**
+     * Fired as existing master {@link Component.Instance}s are added to the {@link CalendarSource}.
+     *
+     * This is fired for all discovered master Instances whether or not they may generate
+     * Instances for this subscription.
+     *
+     * The signal is fired for both local additions (added through this interface) and remote
+     * additions.
+     *
+     * This signal won't fire until {@link start} is called.
+     *
+     * @see instance_added
+     */
+    public signal void master_added(Component.Instance instance);
     
     /**
      * Indicates that an {@link Instance} within the {@link date_window} has been removed from the
@@ -143,10 +182,17 @@ public abstract class CalendarSourceSubscription : BaseObject {
      * @see instance_discovered
      */
     protected virtual void notify_instance_discovered(Component.Instance instance) {
-        if (add_instance(instance))
-            instance_discovered(instance);
-        else
+        if (!add_instance(instance)) {
             debug("Cannot add discovered component %s to %s: already known", instance.to_string(), to_string());
+            
+            return;
+        }
+        
+        if (instance.is_master_instance)
+            master_discovered(instance);
+        
+        if (!instance.can_generate_instances)
+            instance_discovered(instance);
     }
     
     /**
@@ -156,10 +202,17 @@ public abstract class CalendarSourceSubscription : BaseObject {
      * @see instance_added
      */
     protected virtual void notify_instance_added(Component.Instance instance) {
-        if (add_instance(instance))
-            instance_added(instance);
-        else
+        if (!add_instance(instance)) {
             debug("Cannot add component %s to %s: already known", instance.to_string(), to_string());
+            
+            return;
+        }
+        
+        if (instance.is_master_instance)
+            master_added(instance);
+        
+        if (!instance.can_generate_instances)
+            instance_added(instance);
     }
     
     /**
@@ -195,13 +248,13 @@ public abstract class CalendarSourceSubscription : BaseObject {
      * Notify that the {@link Component.Instance}s have been dropped due to the {@link Source} going
      * unavailable.
      */
-    protected virtual void notify_instance_dropped(Component.Instance instance) {
+    protected virtual void notify_instance_dropped(Component.UID uid) {
         Gee.Collection<Component.Instance> removed_instances;
-        if (remove_instance(instance.uid, out removed_instances)) {
+        if (remove_instance(uid, out removed_instances)) {
             foreach (Component.Instance removed_instance in removed_instances)
                 instance_dropped(removed_instance);
         } else {
-            debug("Cannot notify dropped component %s in %s: not known", instance.to_string(), to_string());
+            debug("Cannot notify dropped component %s in %s: not known", uid.to_string(), to_string());
         }
     }
     
@@ -264,7 +317,7 @@ public abstract class CalendarSourceSubscription : BaseObject {
         // the multimap
         debug("Dropping %d instances to %s: unavailable", instances.size, calendar.to_string());
         foreach (Component.Instance instance in instances.get_values().to_array())
-            notify_instance_dropped(instance);
+            notify_instance_dropped(instance.uid);
     }
     
     /**
@@ -282,6 +335,16 @@ public abstract class CalendarSourceSubscription : BaseObject {
      */
     public Gee.Collection<Component.Instance>? for_uid(Component.UID uid) {
         return instances.contains(uid) ? instances.get(uid) : null;
+    }
+    
+    /**
+     * Returns the master {@link Component.Instance} for the {@link Component.UID}.
+     *
+     * @returns null if the UID has not been sene.
+     */
+    public Component.Instance? master_for_uid(Component.UID uid) {
+        return traverse<Component.Instance>(instances.get(uid))
+            .first_matching(instance => instance.is_master_instance);
     }
     
     /**

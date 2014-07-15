@@ -86,13 +86,10 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         // description
         set_label(null, description_text, Markup.linkify(escape(event.description), linkify_delegate));
         
-        // don't current support updating recurring events properly; see
-        // https://bugzilla.gnome.org/show_bug.cgi?id=725786
         bool read_only = event.calendar_source != null && event.calendar_source.read_only;
         
-        bool updatable = !event.is_recurring_instance && !read_only;
-        update_button.visible = updatable;
-        update_button.no_show_all = updatable;
+        update_button.visible = !read_only;
+        update_button.no_show_all = !read_only;
         
         remove_button.visible = !read_only;
         remove_button.no_show_all = !read_only;
@@ -142,7 +139,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         //
         // TODO: Gtk.Stack would be a better widget for this animation, but it's unavailable in
         // Glade as of GTK+ 3.12.
-        if (event.is_recurring_instance) {
+        if (event.is_generated_instance) {
             button_box_revealer.reveal_child = false;
             remove_recurring_revealer.reveal_child = true;
             

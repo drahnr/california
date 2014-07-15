@@ -89,9 +89,10 @@ e_cal_client_get_object.cancellable nullable="1"
 e_cal_client_get_object_finish type_name="void"
 e_cal_client_get_object_finish.out_icalcomp is_out="1" transfer_ownership="1"
 
-e_cal_client_get_object_list async="1"
+e_cal_client_get_object_list async="1" finish_name="e_cal_client_get_object_list_finish"
 e_cal_client_get_object_list.cancellable nullable="1"
-e_cal_client_get_object_list_finish.icalcomps is_out="1" value_owned="1" type_arguments="iCal.icalcomponent"
+
+e_cal_client_get_object_list_finish.out_icalcomps is_out="1" transfer_ownership="1" type_arguments="unowned iCal.icalcomponent"
 
 e_cal_client_get_object_list_as_comps async="1"
 e_cal_client_get_object_list_as_comps.cancellable nullable="1"

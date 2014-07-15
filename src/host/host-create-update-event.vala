@@ -283,7 +283,7 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             return;
         
         // if updating a recurring event, need to ask about update scope
-        if (event.is_recurring_instance && is_update) {
+        if (event.is_generated_instance && is_update) {
             rotating_button_box.family = FAMILY_RECURRING;
             
             return;

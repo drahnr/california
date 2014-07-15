@@ -160,24 +160,8 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         // *must* have an Event by this point, whether from before or due to this jump
         assert(event != null);
         
-        // need to load the master component in order to update the RRULE (which isn't stored in
-        // the generated instances)
-        load_master_async.begin();
-    }
-    
-    private async void load_master_async() {
-        try {
-            Component.Instance master_instance = yield event.calendar_source.fetch_master_component_async(
-                event.uid, null);
-            master = master_instance as Component.Event;
-        } catch (Error err) {
-            debug("Unable to load master from %s: %s", event.calendar_source.to_string(),
-                err.message);
-            
-            master = null;
-        }
-        
-        if (master == null) {
+        // need to use the master component in order to update the master RRULE
+        if (!can_update_recurring(event)) {
             jump_back();
             
             return;
@@ -186,7 +170,12 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         update_controls();
     }
     
+    public static bool can_update_recurring(Component.Event event) {
+        return event.is_master_instance || (event.master is Component.Event);
+    }
+    
     private void update_controls() {
+        master = (event.is_master_instance ? event : event.master) as Component.Event;
         assert(master != null);
         
         make_recurring_checkbutton.active = (master.rrule != null);

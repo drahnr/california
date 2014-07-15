@@ -32,6 +32,7 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public const string PROP_RRULE = "rrule";
     public const string PROP_RID = "rid";
     public const string PROP_SEQUENCE = "sequence";
+    public const string PROP_MASTER = "master";
     
     protected const string PROP_IN_FULL_UPDATE = "in-full-update";
     
@@ -78,12 +79,49 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public Component.DateTime? rid { get; set; default = null; }
     
     /**
-     * Returns true if the {@link Recurrable} is in fact a recurring instance.
+     * Returns true if the {@link Instance} is a master instance.
+     *
+     * A master instance is one that has not been generated from another Instance's recurring
+     * rule (RRULE).  In practice, this means the Instance does not have a RECURRENCE-ID.
+     *
+     * @see rid
+     * @see rrule
+     */
+    public bool is_master_instance { get { return rid == null; } }
+    
+    /**
+     * Returns true if the {@link Instance} is a generated recurring instance.
+     *
+     * A generated recurring instance is one that has been artificially constructed from another
+     * Instance's recurring rule (RRULE).  In practice, this means the Instance has a
+     * RECURRENCE-ID.
      *
      * @see rid
      * @see Backing.CalendarSource.fetch_master_component_async
      */
-    public bool is_recurring_instance { get { return rid != null; } }
+    public bool is_generated_instance { get { return rid != null; } }
+    
+    /**
+     * Returns true if the master {@link Instance} can generate recurring instances.
+     *
+     * This indicates the Instance is a master Instance and can generate recurring instances from
+     * its RRULE.  In practice, this means the Instance has no RECURRENCE-ID but does have an
+     * RRULE.  (Generated instances will have the RRULE that construct them as well as a
+     * RECURRENCE-ID.)
+     *
+     * @see rid
+     * @see Backing.CalendarSource.fetch_master_component_async
+     */
+    public bool can_generate_instances { get { return rid == null && rrule != null; } }
+    
+    /**
+     * If a generated {@link Instance}, holds a reference to the master Instance that generated it.
+     *
+     * The {@link Backing} should do everything it can to provide a master Instance for all
+     * generated Instances.  However, if this is null it is not a guarantee this is a master
+     * Instance.  Use {@link is_master_instance}.
+     */
+    public Instance? master { get; internal set; default = null; }
     
     /**
      * The SEQUENCE of a VEVENT, VTODO, or VJOURNAL.
@@ -421,10 +459,10 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         if (this == other)
             return true;
         
-        if (is_recurring_instance != other.is_recurring_instance)
+        if (is_generated_instance != other.is_generated_instance)
             return false;
         
-        if (is_recurring_instance && !rid.equal_to(other.rid))
+        if (is_generated_instance && !rid.equal_to(other.rid))
             return false;
         
         if (sequence != other.sequence)

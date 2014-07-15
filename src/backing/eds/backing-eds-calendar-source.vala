@@ -135,7 +135,7 @@ internal class EdsCalendarSource : CalendarSource {
         E.CalClientView view;
         yield client.get_view(sexp, cancellable, out view);
         
-        return new EdsCalendarSourceSubscription(this, window, view);
+        return new EdsCalendarSourceSubscription(this, window, view, sexp);
     }
     
     public override async Component.UID? create_component_async(Component.Instance instance,
