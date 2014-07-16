@@ -138,10 +138,27 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         on_day_checkbuttons[Calendar.DayOfWeek.FRI] = friday_checkbutton;
         on_day_checkbuttons[Calendar.DayOfWeek.SAT] = saturday_checkbutton;
         
-        /*
-        foreach (Gtk.CheckButton check_button in on_day_checkbuttons.keys)
-            check_button.notify["active"].connect(on_checkbox_active_changed);
-        */
+        // Ok button's sensitivity is tied to a whole-lotta controls here
+        make_recurring_checkbutton.bind_property("active", ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        every_entry.bind_property("text", ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        repeats_combobox.bind_property("active", ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        foreach (Gtk.CheckButton checkbutton in on_day_checkbuttons.values) {
+            checkbutton.bind_property("active", ok_button, "sensitive",
+                BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        }
+        bind_property(PROP_START_DATE, ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        ends_on_radiobutton.bind_property("active", ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        bind_property(PROP_END_DATE, ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        after_radiobutton.bind_property("active", ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
+        after_entry.bind_property("text", ok_button, "sensitive",
+            BindingFlags.SYNC_CREATE, transform_to_ok_button_sensitive);
     }
     
     private bool transform_repeats_active_to_on_days_visible(Binding binding, Value source_value,
@@ -154,6 +171,46 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
     private bool transform_date_to_string(Binding binding, Value source_value, ref Value target_value) {
         Calendar.Date? date = (Calendar.Date?) source_value;
         target_value = (date != null) ? date.to_standard_string() : "";
+        
+        return true;
+    }
+    
+    private bool transform_to_ok_button_sensitive(Binding binding, Value source_value, ref Value target_value) {
+        target_value = is_ok_ready();
+        
+        return true;
+    }
+    
+    // if controls are added or removed here, that needs to be reflected in the ctor by binding/
+    // unbinding to its properties
+    private bool is_ok_ready() {
+        // if not recurring, ok
+        if (!make_recurring_checkbutton.active)
+            return true;
+        
+        // every entry must be positive value
+        if (String.is_empty(every_entry.text) || int.parse(every_entry.text) <= 0)
+            return false;
+        
+        // if weekly, at least one checkbox must be active
+        if (repeats_combobox.active == Repeats.WEEKLY) {
+            if (!traverse<Gtk.CheckButton>(on_day_checkbuttons.values).any(checkbutton => checkbutton.active))
+                return false;
+        }
+        
+        // need a start date
+        if (start_date == null)
+            return false;
+        
+        // end date required if specified
+        if (ends_on_radiobutton.active && end_date == null)
+            return false;
+        
+        // count required if specified
+        if (after_radiobutton.active) {
+            if (String.is_empty(after_entry.text) || int.parse(after_entry.text) <= 0)
+                return false;
+        }
         
         return true;
     }
