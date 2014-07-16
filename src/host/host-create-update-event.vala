@@ -66,6 +66,7 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     public bool is_update { get; set; default = false; }
     
     private new Component.Event event = new Component.Event.blank();
+    private Component.RecurrenceRule? rrule = null;
     private Gee.HashMap<string, Calendar.WallTime> time_map = new Gee.HashMap<string, Calendar.WallTime>();
     private Backing.CalendarSource? original_calendar_source;
     private Toolkit.ComboBoxTextModel<Backing.CalendarSource> calendar_model;
@@ -141,17 +142,24 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
-        // if jumping back, message is null but want to keep using current Event
-        if (reason != Toolkit.Card.Jump.BACK) {
-            if (message != null) {
-                event = message as Component.Event;
-                assert(event != null);
-            } else {
-                event = new Component.Event.blank();
+        bool update = false;
+        
+        if (message != null) {
+            if (message.type() == typeof (Component.Event)) {
+                event = (Component.Event) message;
+                update = true;
+            } else if (message.type() == typeof (Component.RecurrenceRule)) {
+                rrule = (Component.RecurrenceRule) message;
             }
+        } else if (event == null) {
+            event = new Component.Event.blank();
+            update = true;
         }
         
-        update_controls();
+        assert(event != null);
+        
+        if (update)
+            update_controls();
     }
     
     private void update_controls() {
@@ -178,6 +186,13 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             selected_date_span = new Calendar.DateSpan(Calendar.System.today, Calendar.System.today);
             initial_start_time = Calendar.System.now.to_wall_time();
             initial_end_time = Calendar.System.now.adjust_time(1, Calendar.TimeUnit.HOUR).to_wall_time();
+            
+            // set in Component.Event as well, to at least initialize it for use elsewhere while
+            // editing (such as the RRULE)
+            event.set_event_exact_time_span(new Calendar.ExactTimeSpan(
+                new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today, initial_start_time),
+                new Calendar.ExactTime(Calendar.Timezone.local, Calendar.System.today, initial_end_time)
+            ));
         }
         
         // initialize start and end time controls (as in, wall clock time)
@@ -310,6 +325,8 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
                 )
             );
         }
+        
+        event.make_recurring(rrule);
         
         if (is_update)
             update_event_async.begin(null);

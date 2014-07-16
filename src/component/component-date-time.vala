@@ -133,10 +133,10 @@ public class DateTime : BaseObject, Gee.Hashable<DateTime>, Gee.Comparable<DateT
     public DateTime.rrule_until(iCal.icalrecurrencetype rrule, DateTime dtstart, bool strict)
         throws ComponentError {
         if (iCal.icaltime_is_null_time(rrule.until) != 0)
-            throw new ComponentError.INVALID("DATE-TIME for RRULE UNTIL is null time");
+            throw new ComponentError.UNAVAILABLE("DATE-TIME for RRULE UNTIL is null time");
         
         if (iCal.icaltime_is_valid_time(rrule.until) == 0)
-            throw new ComponentError.INVALID("DATE-TIME for RRULE UNTIL is invalid");
+            throw new ComponentError.UNAVAILABLE("DATE-TIME for RRULE UNTIL is invalid");
         
         bool until_is_date = (iCal.icaltime_is_date(rrule.until) != 0);
         bool until_is_utc = (iCal.icaltime_is_utc(rrule.until) != 0);

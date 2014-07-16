@@ -304,6 +304,8 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
             make_recurring(new RecurrenceRule.from_ical(ical_component, false));
         } catch (ComponentError comperr) {
             // ignored; generally means no RRULE in component
+            if (!(comperr is ComponentError.UNAVAILABLE))
+                debug("Unable to parse RRULE for %s: %s", to_string(), comperr.message);
         }
         
         // save own copy of component; no ownership transferrance w/ current bindings

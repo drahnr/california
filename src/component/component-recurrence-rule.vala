@@ -155,11 +155,16 @@ public class RecurrenceRule : BaseObject {
         if (rrule.count > 0) {
             set_recurrence_count(rrule.count);
         } else {
-            Component.DateTime date_time = new DateTime.rrule_until(rrule, dtstart, strict);
-            if (date_time.is_date)
-                set_recurrence_end_date(date_time.to_date());
-            else
-                set_recurrence_end_exact_time(date_time.to_exact_time());
+            try {
+                Component.DateTime date_time = new DateTime.rrule_until(rrule, dtstart, strict);
+                if (date_time.is_date)
+                    set_recurrence_end_date(date_time.to_date());
+                else
+                    set_recurrence_end_exact_time(date_time.to_exact_time());
+            } catch (ComponentError comperr) {
+                if (!(comperr is ComponentError.UNAVAILABLE))
+                    throw comperr;
+            }
         }
         
         switch (rrule.week_start) {

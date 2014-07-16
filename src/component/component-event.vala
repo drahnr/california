@@ -249,8 +249,12 @@ public class Event : Instance, Gee.Comparable<Event> {
      * @see set_event_exact_time_span
      */
     public void set_event_date_span(Calendar.DateSpan date_span) {
+        freeze_notify();
+        
         this.date_span = date_span;
         exact_time_span = null;
+        
+        thaw_notify();
     }
     
     /**
@@ -261,8 +265,43 @@ public class Event : Instance, Gee.Comparable<Event> {
      * @see set_event_date_span
      */
     public void set_event_exact_time_span(Calendar.ExactTimeSpan exact_time_span) {
+        freeze_notify();
+        
         this.exact_time_span = exact_time_span;
         date_span = null;
+        
+        thaw_notify();
+    }
+    
+    /**
+     * Adjusts the dates of an {@link Event} while preserving {@link WallTime}, if present.
+     *
+     * This will preserve the DATE/DATE-TIME aspect of an Event while adjusting the start and
+     * end {@link Calendar.Date}s.  If a DATE Event, then this is functionally equivalent to
+     * {@link set_event_date_span}.  If a DATE-TIME event, then this is like
+     * {@link set_event_exact_time_span} but without the hassle of preserving start and end times
+     * while changing the dates.
+     */
+    public void adjust_event_date_span(Calendar.DateSpan date_span) {
+        if (is_all_day) {
+            set_event_date_span(date_span);
+            
+            return;
+        }
+        
+        Calendar.ExactTime new_start_time = new Calendar.ExactTime(
+            exact_time_span.start_exact_time.tz,
+            date_span.start_date,
+            exact_time_span.start_exact_time.to_wall_time()
+        );
+        
+        Calendar.ExactTime new_end_time = new Calendar.ExactTime(
+            exact_time_span.end_exact_time.tz,
+            date_span.end_date,
+            exact_time_span.end_exact_time.to_wall_time()
+        );
+        
+        set_event_exact_time_span(new Calendar.ExactTimeSpan(new_start_time, new_end_time));
     }
     
     /**

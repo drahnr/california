@@ -44,7 +44,7 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
-        event = message as Component.Event;
+        event = (message != null) ? message as Component.Event : null;
         
         // if initial date/times supplied, reveal to the user and change the example
         string eg;

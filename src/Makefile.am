@@ -134,6 +134,7 @@ california_VALASOURCES = \
 	util/util-gfx.vala \
 	util/util-markup.vala \
 	util/util-memory.vala \
+	util/util-numeric.vala \
 	util/util-scheduled.vala \
 	util/util-string.vala \
 	util/util-uri.vala \
