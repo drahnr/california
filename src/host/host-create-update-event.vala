@@ -8,6 +8,9 @@ namespace California.Host {
 
 /**
  * A blank "form" of widgets for the user to enter or update event details.
+ *
+ * Message IN: If creating a new event, send Component.Event.blank() (pre-filled with any known
+ * details).  If updating an existing event, send Component.Event.clone().
  */
 
 [GtkTemplate (ui = "/org/yorba/california/rc/create-update-event.ui")]
@@ -66,7 +69,6 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     public bool is_update { get; set; default = false; }
     
     private new Component.Event event = new Component.Event.blank();
-    private Component.RecurrenceRule? rrule = null;
     private Gee.HashMap<string, Calendar.WallTime> time_map = new Gee.HashMap<string, Calendar.WallTime>();
     private Backing.CalendarSource? original_calendar_source;
     private Toolkit.ComboBoxTextModel<Backing.CalendarSource> calendar_model;
@@ -142,24 +144,13 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
-        bool update = false;
+        // if no message, leave everything as it is
+        if (message == null)
+            return;
         
-        if (message != null) {
-            if (message.type() == typeof (Component.Event)) {
-                event = (Component.Event) message;
-                update = true;
-            } else if (message.type() == typeof (Component.RecurrenceRule)) {
-                rrule = (Component.RecurrenceRule) message;
-            }
-        } else if (event == null) {
-            event = new Component.Event.blank();
-            update = true;
-        }
+        event = (Component.Event) message;
         
-        assert(event != null);
-        
-        if (update)
-            update_controls();
+        update_controls();
     }
     
     private void update_controls() {
@@ -304,34 +295,39 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             return;
         }
         
-        event.calendar_source = calendar_model.active;
-        event.summary = summary_entry.text;
-        event.location = location_entry.text;
-        event.description = description_textview.buffer.text;
+        // create/update this instance of the event
+        create_update_event(event, true);
+    }
+    
+    private void create_update_event(Component.Event target, bool update_dtstart) {
+        target.calendar_source = calendar_model.active;
+        target.summary = summary_entry.text;
+        target.location = location_entry.text;
+        target.description = description_textview.buffer.text;
         
-        if (all_day_toggle.active) {
-            event.set_event_date_span(selected_date_span);
-        } else {
-            // use existing timezone unless not specified in original event
-            Calendar.Timezone tz = (event.exact_time_span != null)
-                ? event.exact_time_span.start_exact_time.tz
-                : Calendar.Timezone.local;
-            event.set_event_exact_time_span(
-                new Calendar.ExactTimeSpan(
-                    new Calendar.ExactTime(tz, selected_date_span.start_date,
-                        time_map.get(dtstart_time_combo.get_active_text())),
-                    new Calendar.ExactTime(tz, selected_date_span.end_date,
-                        time_map.get(dtend_time_combo.get_active_text()))
-                )
-            );
+        if (update_dtstart) {
+            if (all_day_toggle.active) {
+                target.set_event_date_span(selected_date_span);
+            } else {
+                // use existing timezone unless not specified in original event
+                Calendar.Timezone tz = (target.exact_time_span != null)
+                    ? target.exact_time_span.start_exact_time.tz
+                    : Calendar.Timezone.local;
+                target.set_event_exact_time_span(
+                    new Calendar.ExactTimeSpan(
+                        new Calendar.ExactTime(tz, selected_date_span.start_date,
+                            time_map.get(dtstart_time_combo.get_active_text())),
+                        new Calendar.ExactTime(tz, selected_date_span.end_date,
+                            time_map.get(dtend_time_combo.get_active_text()))
+                    )
+                );
+            }
         }
         
-        event.make_recurring(rrule);
-        
         if (is_update)
-            update_event_async.begin(null);
+            update_event_async.begin(target, null);
         else
-            create_event_async.begin(null);
+            create_event_async.begin(target, null);
     }
     
     private void on_cancel_button_clicked() {
@@ -339,17 +335,19 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     private void on_update_all_button_clicked() {
+        create_update_event(event.is_master_instance ? event : (Component.Event) event.master, false);
     }
     
     private void on_update_this_button_clicked() {
+        create_update_event(event, true);
     }
     
     private void on_cancel_recurring_button_clicked() {
         rotating_button_box.family = FAMILY_NORMAL;
     }
     
-    private async void create_event_async(Cancellable? cancellable) {
-        if (event.calendar_source == null) {
+    private async void create_event_async(Component.Event target, Cancellable? cancellable) {
+        if (target.calendar_source == null) {
             notify_failure(_("Unable to create event: calendar must be specified"));
             
             return;
@@ -359,7 +357,7 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         
         Error? create_err = null;
         try {
-            yield event.calendar_source.create_component_async(event, cancellable);
+            yield event.calendar_source.create_component_async(target, cancellable);
         } catch (Error err) {
             create_err = err;
         }
@@ -373,8 +371,8 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     }
     
     // TODO: Delete from original source if not the same as the new source
-    private async void update_event_async(Cancellable? cancellable) {
-        if (event.calendar_source == null) {
+    private async void update_event_async(Component.Event target, Cancellable? cancellable) {
+        if (target.calendar_source == null) {
             notify_failure(_("Unable to update event: calendar must be specified"));
             
             return;
@@ -384,7 +382,7 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         
         Error? update_err = null;
         try {
-            yield event.calendar_source.update_component_async(event, cancellable);
+            yield event.calendar_source.update_component_async(target, cancellable);
         } catch (Error err) {
             update_err = err;
         }

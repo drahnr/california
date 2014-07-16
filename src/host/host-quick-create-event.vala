@@ -97,11 +97,7 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
         string details = details_entry.text.strip();
         
         if (String.is_empty(details)) {
-            // jump to Create/Update dialog and remove this Card from the Deck ... this ensures
-            // that if the user presses Cancel in the Create/Update dialog the Deck exits rather
-            // than returns here (via jump_home_or_user_closed())
-            jump_to_card_by_name(CreateUpdateEvent.ID, event);
-            deck.remove_cards(iterate<Toolkit.Card>(this).to_array_list());
+            create_empty_event();
             
             return;
         }
@@ -110,14 +106,22 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
             event);
         event = parser.event;
         
-        if (event.is_valid(true)) {
+        if (event.is_valid(true))
             create_event_async.begin(null);
-        } else {
-            // see note above about why the Deck jumps to Create/Update and then this Card is
-            // removed
-            jump_to_card_by_name(CreateUpdateEvent.ID, event);
-            deck.remove_cards(iterate<Toolkit.Card>(this).to_array_list());
-        }
+        else
+            create_empty_event();
+    }
+    
+    private void create_empty_event() {
+        // Must pass some kind of event to create/update, so use blank if required
+        if (event == null)
+            event = new Component.Event.blank();
+        
+        // jump to Create/Update dialog and remove this Card from the Deck ... this ensures
+        // that if the user presses Cancel in the Create/Update dialog the Deck exits rather
+        // than returns here (via jump_home_or_user_closed())
+        jump_to_card_by_name(CreateUpdateEvent.ID, event);
+        deck.remove_cards(iterate<Toolkit.Card>(this).to_array_list());
     }
     
     private async void create_event_async(Cancellable? cancellable) {

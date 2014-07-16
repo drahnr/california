@@ -351,6 +351,10 @@ public class MainWindow : Gtk.ApplicationWindow {
             Toolkit.spin_event_loop();
         });
         
+        deck_window.deck.failure.connect((msg) => {
+            Application.instance.error_message(msg);
+        });
+        
         deck_window.show_all();
         deck_window.run();
         deck_window.destroy();

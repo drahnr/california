@@ -229,6 +229,17 @@ public class Event : Instance, Gee.Comparable<Event> {
     }
     
     /**
+     * @inheritDoc
+     */
+    public override Component.Instance clone() throws Error {
+        Component.Event cloned_event = new Component.Event(calendar_source, ical_component);
+        if (master != null)
+            cloned_event.master = new Component.Event(master.calendar_source, master.ical_component);
+        
+        return cloned_event;
+    }
+    
+    /**
      * Returns a {@link Calendar.DateSpan} for the {@link Event}.
      *
      * This will return a DateSpan whether the Event is a DATE or DATE-TIME VEVENT.

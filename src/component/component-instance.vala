@@ -19,6 +19,10 @@ namespace California.Component {
  * The second is to update the mutable properties themselves, which will then update the underlying
  * iCal component.
  *
+ * Instances produced by {@link Backing.CalendarSourceSubscription}s will be updated by the
+ * subscription if the Instance is updated or removed locally or remotely.  Cloned Instances,
+ * however, are not automatically updated.  See {@link clone}.
+ *
  * Alarms will be contained within Instance components.  Timezones are handled separately.
  *
  * Instance also offers a number of methods to convert iCal structures into internal objects.
@@ -348,6 +352,19 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         if (altered)
             notify_altered(false);
     }
+    
+    /**
+     * Make a detached copy of the {@link Instance}.
+     *
+     * This produces an exact copy of the Instance at the time of the call.  Unlike Instances
+     * produced by {@link Backing.CalendarSourceSubscription}s, cloned Instances are not
+     * automatically updated as local and/or remote changes are made.  This makes them good for
+     * editing (where a number of changes are made and stored in the Instance, only being submitted
+     * when the user gives the okay).
+     *
+     * Cloning will also clone the {@link master}, if present.
+     */
+    public abstract Component.Instance clone() throws Error;
     
     /**
      * Add a {@link RecurrenceRule} to the {@link Instance}.

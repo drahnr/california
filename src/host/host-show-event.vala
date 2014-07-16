@@ -6,6 +6,10 @@
 
 namespace California.Host {
 
+/**
+ * MESSAGE IN: Send the Component.Event to be displayed.
+ */
+
 [GtkTemplate (ui = "/org/yorba/california/rc/show-event.ui")]
 public class ShowEvent : Gtk.Grid, Toolkit.Card {
     public const string ID = "ShowEvent";
@@ -64,6 +68,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     }
     
     public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
+        // no message, don't update display
         if (message == null)
             return;
         
@@ -176,7 +181,12 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_update_button_clicked() {
-        jump_to_card_by_name(CreateUpdateEvent.ID, event);
+        // pass a clone of the existing event for editing
+        try {
+            jump_to_card_by_name(CreateUpdateEvent.ID, event.clone() as Component.Event);
+        } catch (Error err) {
+            notify_failure(_("Unable to update event: %s").printf(err.message));
+        }
     }
     
     [GtkCallback]

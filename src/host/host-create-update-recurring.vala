@@ -23,37 +23,6 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         YEARLY = 4
     }
     
-    /**
-     * The message that must be passed to this Card when jumping to it.
-     *
-     * The proper master instance will be extracted.  If the RRULE is provided, that will be
-     * used by the card, otherwise the master's RRULE (if any) will be used.
-     */
-    public class MessageIn : Object {
-        public new Component.Event event;
-        public Component.Event master;
-        public Component.RecurrenceRule? rrule;
-        
-        public Message(Component.Event event, Component.RecurrenceRule? rrule) {
-            this.event = event;
-            master = event.is_master_instance ? event : (Component.Event) event.master;
-            rrule = rrule ?? master.rrule;
-        }
-    }
-    
-    /**
-     * The message this card will pass to the next Card when jumping to it.
-     */
-    public class MessageOut : Object {
-        public Component.RecurrenceRule rrule;
-        public Component.Date start_date;
-        
-        public MessageOut(Component.RecurrenceRule rrule, Component.Date start_date) {
-            this.rrule = rrule;
-            this.start_date = start_date;
-        }
-    }
-    
     public string card_id { get { return ID; } }
     
     public string? title { get { return null; } }
@@ -131,6 +100,8 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
     [GtkChild]
     private Gtk.Button ok_button;
     
+    private new Component.Event? event = null;
+    private Component.Event? master = null;
     private Gee.HashMap<Calendar.DayOfWeek, Gtk.CheckButton> on_day_checkbuttons = new Gee.HashMap<
         Calendar.DayOfWeek, Gtk.CheckButton>();
     private bool blocking_insert_text_numbers_only_signal = false;
@@ -166,6 +137,11 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         on_day_checkbuttons[Calendar.DayOfWeek.THU] = thursday_checkbutton;
         on_day_checkbuttons[Calendar.DayOfWeek.FRI] = friday_checkbutton;
         on_day_checkbuttons[Calendar.DayOfWeek.SAT] = saturday_checkbutton;
+        
+        /*
+        foreach (Gtk.CheckButton check_button in on_day_checkbuttons.keys)
+            check_button.notify["active"].connect(on_checkbox_active_changed);
+        */
     }
     
     private bool transform_repeats_active_to_on_days_visible(Binding binding, Value source_value,
@@ -182,28 +158,28 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         return true;
     }
     
-    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? msg) {
-        Message message = (Message) msg;
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
+        assert(message != null);
+        
+        event = (Component.Event) message;
+        master = event.is_master_instance ? event : (Component.Event) event.master;
         
         // need to use the master component in order to update the master RRULE
-        if (!can_update_recurring(message.event)) {
+        if (!can_update_recurring(event)) {
             jump_back();
             
             return;
         }
         
-        update_controls(message);
+        update_controls();
     }
     
     public static bool can_update_recurring(Component.Event event) {
         return event.is_master_instance || (event.master is Component.Event);
     }
     
-    private void update_controls(Message message) {
-        Component.Event master = message.master;
-        Component.RecurrenceRule? rrule = message.rrule;
-        
-        make_recurring_checkbutton.active = (rrule != null);
+    private void update_controls() {
+        make_recurring_checkbutton.active = (master.rrule != null);
         
         // some defaults that may not be set even if an RRULE is present
         
@@ -220,7 +196,7 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
             checkbutton.active = false;
         
         // set remaining defaults if not a recurring event
-        if (rrule == null) {
+        if (master.rrule == null) {
             repeats_combobox.active = Repeats.DAILY;
             every_entry.text = "1";
             never_radiobutton.active = true;
@@ -229,7 +205,7 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         }
         
         // "Repeats" combobox
-        switch (rrule.freq) {
+        switch (master.rrule.freq) {
             case iCal.icalrecurrencetype_frequency.DAILY_RECURRENCE:
                 repeats_combobox.active = Repeats.DAILY;
             break;
@@ -245,8 +221,8 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
             // TODO: BYDAY should be the exact month-day of week for the DTSTART, MONTH_DAY should
             // be the month-day of the month for the DTSTART
             case iCal.icalrecurrencetype_frequency.MONTHLY_RECURRENCE:
-                bool by_day = rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY).size > 0;
-                bool by_monthday = rrule.get_by_rule(Component.RecurrenceRule.ByRule.MONTH_DAY).size > 0;
+                bool by_day = master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY).size > 0;
+                bool by_monthday = master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.MONTH_DAY).size > 0;
                 
                 if (by_day && !by_monthday)
                     repeats_combobox.active = Repeats.DAY_OF_THE_WEEK;
@@ -266,12 +242,12 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         }
         
         // "Every" entry
-        every_entry.text = rrule.interval.to_string();
+        every_entry.text = master.rrule.interval.to_string();
         
         // "On days" week day checkboxes are only visible if a WEEKLY event
         if (master.rrule.is_weekly) {
             Gee.Map<Calendar.DayOfWeek?, int> by_days =
-                Component.RecurrenceRule.decode_days(rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY));
+                Component.RecurrenceRule.decode_days(master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY));
             
             // the presence of a "null" day means every or all days
             if (by_days.has_key(null)) {
@@ -284,16 +260,16 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         }
         
         // "Ends" choices
-        if (!rrule.has_duration) {
+        if (!master.rrule.has_duration) {
             never_radiobutton.active = true;
-        } else if (rrule.count > 0) {
+        } else if (master.rrule.count > 0) {
             after_radiobutton.active = true;
             after_entry.text = master.rrule.count.to_string();
         } else {
-            assert(rrule.until_date != null || rrule.until_exact_time != null);
+            assert(master.rrule.until_date != null || master.rrule.until_exact_time != null);
             
             ends_on_radiobutton.active = true;
-            end_date = rrule.get_recurrence_end_date();
+            end_date = master.rrule.get_recurrence_end_date();
         }
     }
     
@@ -397,12 +373,16 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_ok_button_clicked() {
-        jump_to_card_by_name(CreateUpdateEvent.ID, make_rrule());
+        update_master();
+        jump_to_card_by_name(CreateUpdateEvent.ID, event);
     }
     
-    private MessageOut? make_message_out() {
-        if (!make_recurring_checkbutton.active)
-            return null;
+    private void update_master() {
+        if (!make_recurring_checkbutton.active) {
+            master.make_recurring(null);
+            
+            return;
+        }
         
         iCal.icalrecurrencetype_frequency freq;
         switch (repeats_combobox.active) {
@@ -430,18 +410,6 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         Component.RecurrenceRule rrule = new Component.RecurrenceRule(freq);
         rrule.interval = Numeric.floor_int(int.parse(every_entry.text), 1);
         
-        // set start and end dates (which may actually be date-times)
-        if (never_radiobutton.active) {
-            // no duration
-            rrule.set_recurrence_end_date(null);
-        } else if (ends_on_radiobutton.active) {
-            rrule.set_recurrence_end_date(end_date);
-        } else {
-            assert(after_radiobutton.active);
-            
-            rrule.set_recurrence_count(Numeric.floor_int(int.parse(after_entry.text), 1));
-        }
-        
         if (rrule.is_weekly) {
             Gee.HashMap<Calendar.DayOfWeek?, int> by_day = new Gee.HashMap<Calendar.DayOfWeek?, int>();
             foreach (Calendar.DayOfWeek dow in on_day_checkbuttons.keys) {
@@ -449,8 +417,43 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
                     by_day[dow] = 0;
             }
             
+            // although control sensitivity should prevent this from happening, be double-sure to
+            // prevent infinite loops below
+            if (by_day.size == 0)
+                by_day[start_date.day_of_week] = 0;
+            
             rrule.set_by_rule(Component.RecurrenceRule.ByRule.DAY,
                 Component.RecurrenceRule.encode_days(by_day));
+            
+            // need to also update the start date to fall on one of the selected days of the week
+            // start by looking backward
+            Calendar.Date new_start_date = start_date.prior(true, (date) => {
+                return date.day_of_week in by_day.keys;
+            });
+            
+            // if start date is prior to today's day, move forward
+            if (new_start_date.compare_to(Calendar.System.today) < 0) {
+                new_start_date = start_date.upcoming(true, (date) => {
+                    return date.day_of_week in by_day.keys;
+                });
+            }
+            
+            start_date = new_start_date;
+        }
+        
+        // set start and end dates (which may actually be date-times, so use adjust)
+        if (never_radiobutton.active) {
+            // no duration
+            master.adjust_event_date_span(start_date.to_date_span());
+            rrule.set_recurrence_end_date(null);
+        } else if (ends_on_radiobutton.active) {
+            master.adjust_event_date_span(new Calendar.DateSpan(start_date, end_date));
+            rrule.set_recurrence_end_date(end_date);
+        } else {
+            assert(after_radiobutton.active);
+            
+            master.adjust_event_date_span(start_date.to_date_span());
+            rrule.set_recurrence_count(Numeric.floor_int(int.parse(after_entry.text), 1));
         }
         
         if (rrule.is_monthly) {
@@ -466,7 +469,7 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
             }
         }
         
-        return new MessageOut(rrule, start_date);
+        master.make_recurring(rrule);
     }
 }
 
