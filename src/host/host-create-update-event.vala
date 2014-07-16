@@ -281,6 +281,10 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     
     [GtkCallback]
     private void on_recurring_button_clicked() {
+        // update the component with what's in the controls now
+        update_component(event, true);
+        
+        // send off to recurring editor
         jump_to_card_by_name(CreateUpdateRecurring.ID, event);
     }
     
@@ -299,30 +303,38 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         create_update_event(event, true);
     }
     
-    private void create_update_event(Component.Event target, bool update_dtstart) {
+    // TODO: Now that a clone is being used for editing, can directly bind controls properties to
+    // Event's properties and update that way ... doesn't quite work when updating the master event,
+    // however
+    private void update_component(Component.Event target, bool update_dtstart) {
         target.calendar_source = calendar_model.active;
         target.summary = summary_entry.text;
         target.location = location_entry.text;
         target.description = description_textview.buffer.text;
         
-        if (update_dtstart) {
-            if (all_day_toggle.active) {
-                target.set_event_date_span(selected_date_span);
-            } else {
-                // use existing timezone unless not specified in original event
-                Calendar.Timezone tz = (target.exact_time_span != null)
-                    ? target.exact_time_span.start_exact_time.tz
-                    : Calendar.Timezone.local;
-                target.set_event_exact_time_span(
-                    new Calendar.ExactTimeSpan(
-                        new Calendar.ExactTime(tz, selected_date_span.start_date,
-                            time_map.get(dtstart_time_combo.get_active_text())),
-                        new Calendar.ExactTime(tz, selected_date_span.end_date,
-                            time_map.get(dtend_time_combo.get_active_text()))
-                    )
-                );
-            }
+        if (!update_dtstart)
+            return;
+        
+        if (all_day_toggle.active) {
+            target.set_event_date_span(selected_date_span);
+        } else {
+            // use existing timezone unless not specified in original event
+            Calendar.Timezone tz = (target.exact_time_span != null)
+                ? target.exact_time_span.start_exact_time.tz
+                : Calendar.Timezone.local;
+            target.set_event_exact_time_span(
+                new Calendar.ExactTimeSpan(
+                    new Calendar.ExactTime(tz, selected_date_span.start_date,
+                        time_map.get(dtstart_time_combo.get_active_text())),
+                    new Calendar.ExactTime(tz, selected_date_span.end_date,
+                        time_map.get(dtend_time_combo.get_active_text()))
+                )
+            );
         }
+    }
+    
+    private void create_update_event(Component.Event target, bool update_dtstart) {
+        update_component(target, update_dtstart);
         
         if (is_update)
             update_event_async.begin(target, null);
