@@ -14,10 +14,17 @@ private class CalendarDate : UnitTest.Harness {
         add_case("clamp-neither", clamp_neither);
         add_case("difference-pos", difference_pos);
         add_case("difference-neg", difference_neg);
-        add_case("upcoming", upcoming);
-        add_case("prior", prior);
+        add_case("upcoming-inclusive", upcoming_inclusive);
+        add_case("upcoming-exclusive", upcoming_exclusive);
+        add_case("prior-inclusive", prior_inclusive);
+        add_case("prior-exclusive", prior_exclusive);
         add_case("upcoming-today", upcoming_today);
         add_case("upcoming-next-week", upcoming_next_week);
+        add_case("day-of-week-position-1", day_of_week_position_1);
+        add_case("day-of-week-position-2", day_of_week_position_2);
+        add_case("day-of-week-position-3", day_of_week_position_3);
+        add_case("day-of-week-position-4", day_of_week_position_4);
+        add_case("day-of-week-position-5", day_of_week_position_5);
     }
     
     protected override void setup() throws Error {
@@ -82,25 +89,70 @@ private class CalendarDate : UnitTest.Harness {
         return today.difference(day_before_yesterday) == -2;
     }
     
-    private bool upcoming() throws Error {
-        Calendar.Date today = Calendar.System.today;
-        Calendar.Date upcoming_fri = today.upcoming(Calendar.DayOfWeek.FRI, false);
-        int diff = today.difference(upcoming_fri);
+    private bool upcoming(bool inclusive, out string? dump) throws Error {
+        dump = null;
         
-        return diff > 0 && diff <= 7;
+        Calendar.Date today = Calendar.System.today;
+        
+        foreach (Calendar.DayOfWeek dow in Calendar.DayOfWeek.all(Calendar.FirstOfWeek.SUNDAY)) {
+            Calendar.Date upcoming = Calendar.System.today.upcoming(inclusive,
+                date => date.day_of_week.equal_to(dow));
+            int diff = today.difference(upcoming);
+            
+            dump = "%s - %s = %d".printf(today.to_string(), upcoming.to_string(), diff);
+            
+            if (!inclusive && diff == 0)
+                return false;
+            
+            if (diff < 0 || diff > 7)
+                return false;
+        }
+        
+        return true;
     }
     
-    private bool prior() throws Error {
-        Calendar.Date today = Calendar.System.today;
-        Calendar.Date prior_tue = today.prior(Calendar.DayOfWeek.TUE, false);
-        int diff = today.difference(prior_tue);
+    private bool upcoming_inclusive(out string? dump) throws Error {
+        return upcoming(true, out dump);
+    }
+    
+    private bool upcoming_exclusive(out string? dump) throws Error {
+        return upcoming(false, out dump);
+    }
+    
+    private bool prior(bool inclusive, out string? dump) throws Error {
+        dump = null;
         
-        return diff < 0 && diff >= -7;
+        Calendar.Date today = Calendar.System.today;
+        
+        foreach (Calendar.DayOfWeek dow in Calendar.DayOfWeek.all(Calendar.FirstOfWeek.SUNDAY)) {
+            Calendar.Date upcoming = Calendar.System.today.prior(inclusive,
+                date => date.day_of_week.equal_to(dow));
+            int diff = today.difference(upcoming);
+            
+            dump = "%s - %s = %d".printf(today.to_string(), upcoming.to_string(), diff);
+            
+            if (!inclusive && diff == 0)
+                return false;
+            
+            if (diff > 0 || diff < -7)
+                return false;
+        }
+        
+        return true;
+    }
+    
+    private bool prior_inclusive(out string? dump) throws Error {
+        return prior(false, out dump);
+    }
+    
+    private bool prior_exclusive(out string? dump) throws Error {
+        return prior(false, out dump);
     }
     
     private bool upcoming_today() throws Error {
         Calendar.Date today = Calendar.System.today;
-        Calendar.Date another_today = today.upcoming(today.day_of_week, true);
+        Calendar.Date another_today = today.upcoming(true,
+            date => date.day_of_week.equal_to(today.day_of_week));
         int diff = today.difference(another_today);
         
         return diff == 0;
@@ -108,10 +160,44 @@ private class CalendarDate : UnitTest.Harness {
     
     private bool upcoming_next_week() throws Error {
         Calendar.Date today = Calendar.System.today;
-        Calendar.Date next_week = today.upcoming(today.day_of_week, false);
+        Calendar.Date next_week = today.upcoming(false,
+            date => date.day_of_week.equal_to(today.day_of_week));
         int diff = today.difference(next_week);
         
         return diff == 7;
+    }
+    
+    private bool test_dow_position(Calendar.Date date, int expected, out string? dump) throws Error {
+        int position = date.day_of_month.week_of_month;
+        
+        dump = "%s position=%d, expected=%d".printf(date.to_string(), position, expected);
+        
+        return position == expected;
+    }
+    
+    private Calendar.Date jun2014(int dom) throws Error {
+        return new Calendar.Date(Calendar.DayOfMonth.for(dom), Calendar.Month.JUN,
+            new Calendar.Year(2014));
+    }
+    
+    private bool day_of_week_position_1(out string? dump) throws Error {
+        return test_dow_position(jun2014(1), 1, out dump);
+    }
+    
+    private bool day_of_week_position_2(out string? dump) throws Error {
+        return test_dow_position(jun2014(9), 2, out dump);
+    }
+    
+    private bool day_of_week_position_3(out string? dump) throws Error {
+        return test_dow_position(jun2014(20), 3, out dump);
+    }
+    
+    private bool day_of_week_position_4(out string? dump) throws Error {
+        return test_dow_position(jun2014(23), 4, out dump);
+    }
+    
+    private bool day_of_week_position_5(out string? dump) throws Error {
+        return test_dow_position(jun2014(30), 5, out dump);
     }
 }
 

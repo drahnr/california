@@ -110,8 +110,8 @@ internal class EdsStore : Store, WebCalSubscribable, CalDAVSubscribable {
         
         List<E.Source> sources = new List<E.Source>();
         sources.append(scratch);
-        // TODO: Properly bind async version of this call
-        registry.create_sources_sync(sources, cancellable);
+        
+        yield registry.create_sources(sources, cancellable);
     }
     
     public override Gee.List<Source> get_sources() {

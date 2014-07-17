@@ -52,6 +52,9 @@ public class DayOfWeek : BaseObject, Gee.Hashable<DayOfWeek> {
     public static DayOfWeek SAT;
     public static DayOfWeek SUN;
     
+    public static DayOfWeek[] weekdays;
+    public static DayOfWeek[] weekend_days;
+    
     public const int MIN = 1;
     public const int MAX = 7;
     public const int COUNT = MAX - MIN + 1;
@@ -142,11 +145,23 @@ public class DayOfWeek : BaseObject, Gee.Hashable<DayOfWeek> {
         days_of_week_sunday[4] = THU;
         days_of_week_sunday[5] = FRI;
         days_of_week_sunday[6] = SAT;
+        
+        weekdays = new DayOfWeek[5];
+        weekdays[0] = MON;
+        weekdays[1] = TUE;
+        weekdays[2] = WED;
+        weekdays[3] = THU;
+        weekdays[4] = FRI;
+        
+        weekend_days = new DayOfWeek[2];
+        weekend_days[0] = SAT;
+        weekend_days[1] = SUN;
     }
     
     internal static void terminate() {
         days_of_week_monday = days_of_week_sunday = null;
         MON = TUE = WED = THU = FRI = SAT = SUN = null;
+        weekdays = weekend_days = null;
     }
     
     /**
@@ -158,16 +173,7 @@ public class DayOfWeek : BaseObject, Gee.Hashable<DayOfWeek> {
         if (index < 0 || index >= COUNT)
             throw new CalendarError.INVALID("Invalid day of week value %d", value);
         
-        switch (first_of_week) {
-            case FirstOfWeek.MONDAY:
-                return days_of_week_monday[index];
-            
-            case FirstOfWeek.SUNDAY:
-                return days_of_week_sunday[index];
-            
-            default:
-                assert_not_reached();
-        }
+        return all(first_of_week)[index];
     }
     
     /**
@@ -179,6 +185,22 @@ public class DayOfWeek : BaseObject, Gee.Hashable<DayOfWeek> {
             return for(value, first_of_week);
         } catch (CalendarError calerr) {
             error("%s", calerr.message);
+        }
+    }
+    
+    /**
+     * Return all {@link DayOfWeeks} ordered by the {@link FirstOfWeek}.
+     */
+    public static unowned DayOfWeek[] all(FirstOfWeek first_of_week) {
+        switch (first_of_week) {
+            case FirstOfWeek.MONDAY:
+                return days_of_week_monday;
+            
+            case FirstOfWeek.SUNDAY:
+                return days_of_week_sunday;
+            
+            default:
+                assert_not_reached();
         }
     }
     

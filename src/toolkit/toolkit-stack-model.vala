@@ -116,6 +116,7 @@ public class StackModel<G> : BaseObject {
     private Gee.HashMap<G, Gtk.Widget?> items;
     private bool in_balance_cache = false;
     private bool stack_destroyed = false;
+    private Scheduled? scheduled_balance_cache = null;
     
     public StackModel(Gtk.Stack stack,
         OrderedTransitionType ordered_transition_type,
@@ -256,10 +257,8 @@ public class StackModel<G> : BaseObject {
                 // which (apparently) it has not when this change is made (probably made at start
                 // of transition, not the end) ... "transition-running" property would be useful
                 // here, but that's not available until GTK 3.12
-                Idle.add(() => {
+                scheduled_balance_cache = new Scheduled.once_at_idle(() => {
                     balance_cache("on_stack_child_visible");
-                    
-                    return false;
                 }, Priority.LOW);
                 
                 return;
@@ -305,13 +304,14 @@ public class StackModel<G> : BaseObject {
         
         // trim existing widgets from cache
         if (trim_from_cache != null) {
-            Gee.MapIterator<G, Gtk.Widget?> iter = items.map_iterator();
-            while (iter.next()) {
-                Gtk.Widget? presentation = iter.get_value();
-                if (presentation != null && trim_from_cache(iter.get_key(), visible_item)) {
+            // use a copy of the keys to avoid iterating over the map while it's being altered
+            // (in particular, by one of our own signal handlers)
+            foreach (G key in items.keys.to_array()) {
+                Gtk.Widget? presentation = items[key];
+                if (presentation != null && trim_from_cache(key, visible_item)) {
                     // set_value before removing from stack to prevent our signal handler from
                     // unsetting underneath us and causing iterator stamp problems
-                    iter.set_value(null);
+                    items[key] = null;
                     presentation.destroy();
                 }
             }

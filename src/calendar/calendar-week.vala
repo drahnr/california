@@ -19,6 +19,9 @@ namespace California.Calendar {
  */
 
 public class Week : Unit<Week>, Gee.Comparable<Week>, Gee.Hashable<Week> {
+    public const int MIN_WEEK_OF_MONTH = 1;
+    public const int MAX_WEEK_OF_MONTH = 6;
+    
     /**
      * The one-based week of the month (1 to 6).
      */
@@ -58,6 +61,19 @@ public class Week : Unit<Week>, Gee.Comparable<Week>, Gee.Hashable<Week> {
         this.week_of_year = week_of_year;
         this.month_of_year = month_of_year;
         this.first_of_week = first_of_week;
+    }
+    
+    /**
+     * Returns the {@link Date} for the {@link DayOfWeek}.
+     */
+    public Date date_at(DayOfWeek dow) {
+        // although mixing FirstOfWeek is dangerous, don't trust simple math here because of this issue
+        foreach (Date date in to_date_span()) {
+            if (date.day_of_week.equal_to(dow))
+                return date;
+        }
+        
+        assert_not_reached();
     }
     
     /**

@@ -127,8 +127,24 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="pack_type">end</property>
             <property name="position">6</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="recurring_button">
+            <property name="label" translatable="yes">Re_peats...</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="margin_left">8</property>
+            <property name="use_underline">True</property>
+            <signal name="clicked" handler="on_recurring_button_clicked" object="CaliforniaHostCreateUpdateEvent" swapped="no"/>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">7</property>
           </packing>
         </child>
       </object>
@@ -169,6 +185,7 @@
           <object class="GtkEntry" id="location_entry">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="activates_default">True</property>
           </object>
           <packing>
             <property name="left_attach">1</property>
@@ -251,53 +268,14 @@
       </packing>
     </child>
     <child>
-      <object class="GtkButtonBox" id="button_box">
+      <object class="GtkBox" id="rotating_button_box_container">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="valign">end</property>
         <property name="margin_top">8</property>
-        <property name="vexpand">True</property>
-        <property name="spacing">6</property>
-        <property name="homogeneous">True</property>
-        <property name="layout_style">end</property>
+        <property name="hexpand">True</property>
+        <property name="vexpand">False</property>
         <child>
-          <object class="GtkButton" id="cancel_button">
-            <property name="label" translatable="yes">_Cancel</property>
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="can_default">True</property>
-            <property name="receives_default">True</property>
-            <property name="use_underline">True</property>
-            <property name="image_position">bottom</property>
-            <signal name="clicked" handler="on_cancel_button_clicked" object="CaliforniaHostCreateUpdateEvent" swapped="no"/>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkButton" id="accept_button">
-            <property name="label" translatable="yes">C_reate</property>
-            <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="can_default">True</property>
-            <property name="has_default">True</property>
-            <property name="receives_default">True</property>
-            <property name="use_underline">True</property>
-            <property name="image_position">bottom</property>
-            <signal name="clicked" handler="on_accept_clicked" object="CaliforniaHostCreateUpdateEvent" swapped="no"/>
-            <style>
-              <class name="suggested-action"/>
-            </style>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">1</property>
-          </packing>
+          <placeholder/>
         </child>
       </object>
       <packing>

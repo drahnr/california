@@ -127,7 +127,7 @@ public class System : BaseObject {
     public signal void first_of_week_changed(FirstOfWeek old_fow, FirstOfWeek new_fow);
     
     private GLib.Settings system_clock_format_schema = new GLib.Settings(CLOCK_FORMAT_SCHEMA);
-    private uint date_timer_id = 0;
+    private Scheduled scheduled_date_timer;
     
     private System() {
         zone = new OlsonZone(timedated_service.timezone);
@@ -153,13 +153,8 @@ public class System : BaseObject {
         // this may seem wasteful, but since the date can change for a lot of reasons (user
         // intervention, clock drift, NTP, etc.) this is a simple way to stay on top of things
         today = new Date.now(Timezone.local);
-        date_timer_id = Timeout.add_seconds_full(CHECK_DATE_PRIORITY, next_check_today_interval_sec(),
-            check_today_changed);
-    }
-    
-    ~System() {
-        if (date_timer_id != 0)
-            Source.remove(date_timer_id);
+        scheduled_date_timer = new Scheduled.once_after_sec(next_check_today_interval_sec(),
+            check_today_changed, CHECK_DATE_PRIORITY);
     }
     
     internal static void preinit() throws IOError {
@@ -215,14 +210,12 @@ public class System : BaseObject {
     }
     
     // See note in constructor for logic behind this SourceFunc
-    private bool check_today_changed() {
+    private void check_today_changed() {
         update_today();
         
         // reschedule w/ the next interval
-        date_timer_id = Timeout.add_seconds_full(CHECK_DATE_PRIORITY, next_check_today_interval_sec(),
-            check_today_changed);
-        
-        return false;
+        scheduled_date_timer = new Scheduled.once_after_sec(next_check_today_interval_sec(),
+            check_today_changed, CHECK_DATE_PRIORITY);
     }
     
     private void update_today() {

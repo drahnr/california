@@ -16,7 +16,7 @@ internal class EdsCalendarSource : CalendarSource {
     private E.Source eds_source;
     private E.SourceCalendar eds_calendar;
     private E.CalClient? client = null;
-    private uint source_write_id = 0;
+    private Scheduled? scheduled_source_write = null;
     private Cancellable? source_write_cancellable = null;
     
     public EdsCalendarSource(E.Source eds_source, E.SourceCalendar eds_calendar) {
@@ -41,7 +41,8 @@ internal class EdsCalendarSource : CalendarSource {
     }
     
     ~EdsCalendarSource() {
-        cancel_source_write();
+        if (scheduled_source_write != null)
+            scheduled_source_write.wait();
     }
     
     private void on_title_changed() {
@@ -72,44 +73,31 @@ internal class EdsCalendarSource : CalendarSource {
     }
     
     private void schedule_source_write(string reason) {
-        cancel_source_write();
-        
         debug("Scheduling update of %s due to %s...", to_string(), reason);
-        source_write_cancellable = new Cancellable();
-        source_write_id = Timeout.add(UPDATE_DELAY_MSEC, on_background_write_source, Priority.LOW);
-    }
-    
-    private void cancel_source_write() {
-        if (source_write_id != 0) {
-            GLib.Source.remove(source_write_id);
-            source_write_id = 0;
-        }
         
-        if (source_write_cancellable != null) {
+        // cancel an outstanding write
+        if (source_write_cancellable != null)
             source_write_cancellable.cancel();
-            source_write_cancellable = null;
-        }
+        source_write_cancellable = new Cancellable();
+        
+        scheduled_source_write = new Scheduled.once_after_msec(UPDATE_DELAY_MSEC,
+            () => on_background_write_source_async.begin(), Priority.LOW);
     }
     
-    private bool on_background_write_source() {
-        // in essence, say this is no longer scheduled ... for now, allow another write to be
-        // scheduled while this one is occurring
-        source_write_id = 0;
+    private async void on_background_write_source_async() {
         Cancellable? cancellable = source_write_cancellable;
         source_write_cancellable = null;
         
         if (cancellable == null || cancellable.is_cancelled())
-            return false;
+            return;
         
         try {
             debug("Updating EDS source %s...", to_string());
-            // TODO: Fix bindings to use async variant
-            eds_source.write_sync(cancellable);
+            yield eds_source.write(cancellable);
+            debug("Updated EDS source %s", to_string());
         } catch (Error err) {
             debug("Error updating EDS source %s: %s", to_string(), err.message);
         }
-        
-        return false;
     }
     
     // Invoked by EdsStore prior to making it available outside of unit
@@ -147,16 +135,15 @@ internal class EdsCalendarSource : CalendarSource {
         E.CalClientView view;
         yield client.get_view(sexp, cancellable, out view);
         
-        return new EdsCalendarSourceSubscription(this, window, view);
+        return new EdsCalendarSourceSubscription(this, window, view, sexp);
     }
     
     public override async Component.UID? create_component_async(Component.Instance instance,
         Cancellable? cancellable = null) throws Error {
         check_open();
         
-        // TODO: Fix create_object() bindings so async is possible
         string? uid;
-        client.create_object_sync(instance.ical_component, out uid, cancellable);
+        yield client.create_object(instance.ical_component, cancellable, out uid);
         
         return !String.is_empty(uid) ? new Component.UID(uid) : null;
     }
@@ -165,24 +152,88 @@ internal class EdsCalendarSource : CalendarSource {
         Cancellable? cancellable = null) throws Error {
         check_open();
         
-        // TODO: Fix modify_object() bindings so async is possible
-        client.modify_object_sync(instance.ical_component, E.CalObjModType.THIS, cancellable);
+        E.CalObjModType modtype =
+            instance.can_generate_instances ? E.CalObjModType.ALL : E.CalObjModType.THIS;
+        
+        yield client.modify_object(instance.ical_component, modtype, cancellable);
     }
     
-    public override async void remove_component_async(Component.UID uid,
+    public override async void remove_all_instances_async(Component.UID uid,
         Cancellable? cancellable = null) throws Error {
         check_open();
         
-        // TODO: Fix remove_object() bindings so async is possible
-        client.remove_object_sync(uid.value, null, E.CalObjModType.THIS, cancellable);
+        yield client.remove_object(uid.value, null, E.CalObjModType.ALL, cancellable);
+    }
+    
+    public override async void remove_instances_async(Component.UID uid, Component.DateTime rid,
+        CalendarSource.AffectedInstances affected, Cancellable? cancellable = null) throws Error {
+        check_open();
+        
+        // Note that E.CalObjModType.ONLY_THIS is *never* used ... examining EDS source code,
+        // it appears in e-cal-backend-file.c that ONLY_THIS merely removes the instance but does not
+        // include an EXDATE in the original iCal source ... I don't quite understand the benefit of
+        // this, as this suggests (a) other calendar clients won't learn of the removal and (b) the
+        // instance will be re-generated the next time the user runs an EDS calendar client.  In
+        // either case, THIS maps to our desired effect by adding an EXDATE to the iCal source.
+        switch (affected) {
+            case CalendarSource.AffectedInstances.THIS:
+                yield client.remove_object(uid.value, rid.value, E.CalObjModType.THIS, cancellable);
+            break;
+            
+            case CalendarSource.AffectedInstances.THIS_AND_FUTURE:
+                yield remove_this_and_future_async(uid, rid, cancellable);
+            break;
+            
+            case CalendarSource.AffectedInstances.ALL:
+                yield remove_all_instances_async(uid, cancellable);
+            break;
+            
+            default:
+                assert_not_reached();
+        }
+    }
+    
+    private async void remove_this_and_future_async(Component.UID uid, Component.DateTime rid,
+        Cancellable? cancellable) throws Error {
+        // get the master instance ... remember that the Backing.CalendarSource only stores generated
+        // instances
+        iCal.icalcomponent ical_component;
+        yield client.get_object(uid.value, null, cancellable, out ical_component);
+        
+        // change the RRULE's UNTIL indicating the end of the recurring set (which is, handily enough,
+        // the RID)
+        unowned iCal.icalproperty? rrule_property = ical_component.get_first_property(
+            iCal.icalproperty_kind.RRULE_PROPERTY);
+        if (rrule_property == null)
+            return;
+        
+        iCal.icalrecurrencetype rrule = rrule_property.get_rrule();
+        
+        // In order to be inclusive, need to set UNTIL one tick earlier to ensure the supplied RID
+        // is now excluded
+        if (rid.is_date) {
+            Component.date_to_ical(rid.to_date().previous(), &rrule.until);
+        } else {
+            Component.exact_time_to_ical(rid.to_exact_time().adjust_time(-1, Calendar.TimeUnit.SECOND),
+                &rrule.until);
+        }
+        
+        // COUNT and UNTIL are mutually exclusive in an RRULE ... COUNT can be reliably reset
+        // because the RID enforces a new de facto COUNT (assuming the RID originated from the UID's
+        // recurring instance; if not, the user has screwed up)
+        rrule.count = 0;
+        
+        rrule_property.set_rrule(rrule);
+        
+        // write it out ... essentially, this style of remove is actually an update
+        yield client.modify_object(ical_component, E.CalObjModType.THIS, cancellable);
     }
     
     public override async void import_icalendar_async(Component.iCalendar ical, Cancellable? cancellable = null)
         throws Error {
         check_open();
         
-        // TODO: Fix receive_objects() bindings so async is possible
-        client.receive_objects_sync(ical.ical_component, cancellable);
+        yield client.receive_objects(ical.ical_component, cancellable);
     }
 }
 

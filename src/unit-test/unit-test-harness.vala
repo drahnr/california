@@ -11,7 +11,7 @@ namespace California.UnitTest {
  */
 
 public abstract class Harness : BaseObject {
-    public delegate bool Case() throws Error;
+    public delegate bool Case(out string? dump = null) throws Error;
     
     private class TestCase : BaseObject {
         public string name;
@@ -113,17 +113,21 @@ public abstract class Harness : BaseObject {
             }
             
             bool success = false;
+            string? dump = null;
             Error? err = null;
             try {
-                success = test_case.unit_test();
+                success = test_case.unit_test(out dump);
             } catch (Error caught) {
                 err = caught;
             }
             
             if (err != null)
-                stdout.printf("\nFailed: %s.%s\n\t%s\n", name, test_case.name, err.message);
+                stdout.printf("failed (thrown error):\n\t\"%s\"\n", err.message);
             else if (!success)
-                stdout.printf("\nFailed: %s.%s\n", name, test_case.name);
+                stdout.printf("failed (test):\n");
+            
+            if ((err != null || !success) && !String.is_empty(dump))
+                stdout.printf("%s\n", dump);
             
             if (err != null || !success)
                 Posix.exit(Posix.EXIT_FAILURE);

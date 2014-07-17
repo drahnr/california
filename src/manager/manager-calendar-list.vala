@@ -53,7 +53,7 @@ internal class CalendarList : Gtk.Grid, Toolkit.Card {
         Backing.Manager.instance.notify[Backing.Manager.PROP_IS_OPEN].disconnect(on_manager_opened_closed);
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
     }
     
     private void on_manager_opened_closed() {

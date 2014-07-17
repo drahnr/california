@@ -43,7 +43,7 @@ public class InstanceList : Gtk.Grid, Toolkit.Card {
         return true;
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
     }
     
     private void on_item_activated(Instance activator) {

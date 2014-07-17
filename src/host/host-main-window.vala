@@ -353,6 +353,10 @@ public class MainWindow : Gtk.ApplicationWindow {
             Toolkit.spin_event_loop();
         });
         
+        deck_window.deck.failure.connect((msg) => {
+            Application.instance.error_message(msg);
+        });
+        
         deck_window.show_all();
     }
     
@@ -424,12 +428,21 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
     
     private void quick_create_event(Component.Event? initial, Gtk.Widget relative_to, Gdk.Point? for_location) {
-        QuickCreateEvent quick_create = new QuickCreateEvent(initial);
+        QuickCreateEvent quick_create = new QuickCreateEvent();
+        
         CreateUpdateEvent create_update = new CreateUpdateEvent();
         create_update.is_update = false;
         
+        CreateUpdateRecurring create_update_recurring = new CreateUpdateRecurring();
+        
         Toolkit.Deck deck = new Toolkit.Deck();
-        deck.add_cards(iterate<Toolkit.Card>(quick_create, create_update).to_array_list());
+        deck.add_cards(
+            iterate<Toolkit.Card>(quick_create, create_update, create_update_recurring)
+            .to_array_list()
+        );
+        
+        // initialize the Deck with the initial event (if any)
+        deck.go_home(initial);
         
         show_deck(relative_to, for_location, deck);
     }
@@ -437,27 +450,22 @@ public class MainWindow : Gtk.ApplicationWindow {
     private void on_request_display_event(Component.Event event, Gtk.Widget relative_to,
         Gdk.Point? for_location) {
         ShowEvent show_event = new ShowEvent();
-        show_event.remove_event.connect(() => {
-            remove_event_async.begin(event, null);
-        });
         
-        CreateUpdateEvent create_update_event = new CreateUpdateEvent();
-        create_update_event.is_update = true;
+        CreateUpdateEvent create_update = new CreateUpdateEvent();
+        create_update.is_update = true;
+        
+        CreateUpdateRecurring create_update_recurring = new CreateUpdateRecurring();
         
         Toolkit.Deck deck = new Toolkit.Deck();
-        deck.add_card(show_event);
-        deck.add_card(create_update_event);
+        deck.add_cards(
+            iterate<Toolkit.Card>(show_event, create_update, create_update_recurring)
+            .to_array_list()
+        );
+        
+        // "initialize" the Deck with the requested Event (because ShowEvent is first, it's home)
         deck.go_home(event);
         
         show_deck(relative_to, for_location, deck);
-    }
-    
-    private async void remove_event_async(Component.Event event, Cancellable? cancellable) {
-        try {
-            yield event.calendar_source.remove_component_async(event.uid, cancellable);
-        } catch (Error err) {
-            debug("Unable to destroy event: %s", err.message);
-        }
     }
 }
 

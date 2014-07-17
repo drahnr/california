@@ -49,7 +49,9 @@ public string reduce_whitespace(string str) {
         last_ch = ch;
     }
     
-    return builder.str;
+    // due to get_next_char()'s interface, don't know when char is last, so it's possible for trailing
+    // whitespace to exist
+    return builder.str.chomp();
 }
 
 /**

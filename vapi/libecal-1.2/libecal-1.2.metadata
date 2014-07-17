@@ -26,7 +26,9 @@ e_cal_client_add_timezone async="1"
 
 e_cal_client_create_object async="1" finish_name="e_cal_client_create_object_finish"
 e_cal_client_create_object.cancellable nullable="1"
-e_cal_client_create_object_finish.uid is_out="1" value_owned="1"
+
+e_cal_client_create_object_finish type_name="void"
+e_cal_client_create_object_finish.out_uid is_out="1" value_owned="1"
 
 e_cal_client_create_object_sync.out_uid is_out="1" transfer_ownership="1" is_nullable="1"
 e_cal_client_create_object_sync.cancellable nullable="1"
@@ -54,8 +56,17 @@ e_cal_client_generate_instances_sync.end type_name="time_t"
 e_cal_client_generate_instances_sync.cb delegate_target_pos="3.9"
 e_cal_client_generate_instances_sync.cb_data hidden="1"
 
+e_cal_client_generate_instances_for_object.start type_name="time_t"
+e_cal_client_generate_instances_for_object.end type_name="time_t"
 e_cal_client_generate_instances_for_object.cancellable nullable="1"
-e_cal_client_generate_instances_for_object.destroy_cb_data value_owned="1" nullable="1"
+e_cal_client_generate_instances_for_object.cb delegate_target_pos="5.9"
+e_cal_client_generate_instances_for_object.cb_data hidden="1"
+e_cal_client_generate_instances_for_object.destroy_cb_data value_owned="1" nullable="1" delegate_target_pos="5.9"
+
+e_cal_client_generate_instances_for_object_sync.start type_name="time_t"
+e_cal_client_generate_instances_for_object_sync.end type_name="time_t"
+e_cal_client_generate_instances_for_object_sync.cb delegate_target_pos="6.9"
+e_cal_client_generate_instances_for_object_sync.cb_data hidden="1"
 
 e_cal_client_get_attachment_uris async="1"
 e_cal_client_get_attachment_uris.cancellable nullable="1"
@@ -71,13 +82,17 @@ e_cal_client_get_free_busy async="1"
 e_cal_client_get_free_busy.cancellable nullable="1"
 e_cal_client_get_free_busy_sync.cancellable nullable="1"
 
-e_cal_client_get_object async="1"
+e_cal_client_get_object async="1" finish_name="e_cal_client_get_object_finish"
+e_cal_client_get_object.rid nullable="1"
 e_cal_client_get_object.cancellable nullable="1"
-e_cal_client_get_object_finish.icalcomp is_out="1" value_owned="1"
 
-e_cal_client_get_object_list async="1"
+e_cal_client_get_object_finish type_name="void"
+e_cal_client_get_object_finish.out_icalcomp is_out="1" transfer_ownership="1"
+
+e_cal_client_get_object_list async="1" finish_name="e_cal_client_get_object_list_finish"
 e_cal_client_get_object_list.cancellable nullable="1"
-e_cal_client_get_object_list_finish.icalcomps is_out="1" value_owned="1" type_arguments="iCal.icalcomponent"
+
+e_cal_client_get_object_list_finish.out_icalcomps is_out="1" transfer_ownership="1" type_arguments="unowned iCal.icalcomponent"
 
 e_cal_client_get_object_list_as_comps async="1"
 e_cal_client_get_object_list_as_comps.cancellable nullable="1"
@@ -109,22 +124,37 @@ e_cal_client_get_timezone_sync.zone is_out="1" value_owned="1"
 
 e_cal_client_get_view async="1" finish_name="e_cal_client_get_view_finish"
 e_cal_client_get_view.cancellable nullable="1"
-e_cal_client_get_view_finish.view is_out="1" value_owned="0"
 
+e_cal_client_get_view_finish type_name="void"
+e_cal_client_get_view_finish.out_view is_out="1" value_owned="1"
+
+e_cal_client_get_view_sync type_name="void"
 e_cal_client_get_view_sync.cancellable nullable="1"
-e_cal_client_get_view_sync.view is_out="1" value_owned="1"
+e_cal_client_get_view_sync.out_view is_out="1" value_owned="1"
 
-e_cal_client_modify_object async="1"
+e_cal_client_modify_object async="1" finish_name="e_cal_client_modify_object_finish"
 e_cal_client_modify_object.cancellable nullable="1"
+
+e_cal_client_modify_object_finish type_name="void"
+
+e_cal_client_modify_object_sync type_name="void"
 e_cal_client_modify_object_sync.cancellable nullable="1"
 
-e_cal_client_receive_objects async="1"
+e_cal_client_receive_objects async="1" finish_name="e_cal_client_receive_objects_finish"
 e_cal_client_receive_objects.cancellable nullable="1"
+
+e_cal_client_receive_objects_finish type_name="void"
+
+e_cal_client_receive_objects_sync type_name="void"
 e_cal_client_receive_objects_sync.cancellable nullable="1"
 
-e_cal_client_remove_object async="1"
+e_cal_client_remove_object async="1" finish_name="e_cal_client_remove_object_finish"
+e_cal_client_remove_object.rid nullable="1"
 e_cal_client_remove_object.cancellable nullable="1"
 
+e_cal_client_remove_object_finish type_name="void"
+
+e_cal_client_remove_object_sync type_name="void"
 e_cal_client_remove_object_sync.rid nullable="1"
 e_cal_client_remove_object_sync.cancellable nullable="1"
 
@@ -208,7 +238,9 @@ ECalComponentAttendee is_value_type="1"
 ECalComponentDateTime is_value_type="1" has_destroy_function="0"
 ECalComponentDateTime.value type_name="iCal.icaltimetype*"
 
-ECalComponentId is_value_type="1"
+ECalComponentId is_value_type="0" free_function="e_cal_component_free_id"
+e_cal_component_id_copy transfer_ownership="1"
+
 ECalComponentOrganizer is_value_type="1"
 ECalComponentPeriod is_value_type="1"
 ECalComponentPeriod.start type_name="iCal.icaltimetype"

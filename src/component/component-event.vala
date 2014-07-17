@@ -229,6 +229,17 @@ public class Event : Instance, Gee.Comparable<Event> {
     }
     
     /**
+     * @inheritDoc
+     */
+    public override Component.Instance clone() throws Error {
+        Component.Event cloned_event = new Component.Event(calendar_source, ical_component);
+        if (master != null)
+            cloned_event.master = new Component.Event(master.calendar_source, master.ical_component);
+        
+        return cloned_event;
+    }
+    
+    /**
      * Returns a {@link Calendar.DateSpan} for the {@link Event}.
      *
      * This will return a DateSpan whether the Event is a DATE or DATE-TIME VEVENT.
@@ -249,8 +260,12 @@ public class Event : Instance, Gee.Comparable<Event> {
      * @see set_event_exact_time_span
      */
     public void set_event_date_span(Calendar.DateSpan date_span) {
+        freeze_notify();
+        
         this.date_span = date_span;
         exact_time_span = null;
+        
+        thaw_notify();
     }
     
     /**
@@ -261,8 +276,72 @@ public class Event : Instance, Gee.Comparable<Event> {
      * @see set_event_date_span
      */
     public void set_event_exact_time_span(Calendar.ExactTimeSpan exact_time_span) {
+        freeze_notify();
+        
         this.exact_time_span = exact_time_span;
         date_span = null;
+        
+        thaw_notify();
+    }
+    
+    /**
+     * Adjusts the dates of an {@link Event} while preserving {@link WallTime}, if present.
+     *
+     * This will preserve the DATE/DATE-TIME aspect of an Event while adjusting the start and
+     * end {@link Calendar.Date}s.  If a DATE Event, then this is functionally equivalent to
+     * {@link set_event_date_span}.  If a DATE-TIME event, then this is like
+     * {@link set_event_exact_time_span} but without the hassle of preserving start and end times
+     * while changing the dates.
+     */
+    public void adjust_event_date_span(Calendar.DateSpan date_span) {
+        if (is_all_day) {
+            set_event_date_span(date_span);
+            
+            return;
+        }
+        
+        Calendar.ExactTime new_start_time = new Calendar.ExactTime(
+            exact_time_span.start_exact_time.tz,
+            date_span.start_date,
+            exact_time_span.start_exact_time.to_wall_time()
+        );
+        
+        Calendar.ExactTime new_end_time = new Calendar.ExactTime(
+            exact_time_span.end_exact_time.tz,
+            date_span.end_date,
+            exact_time_span.end_exact_time.to_wall_time()
+        );
+        
+        set_event_exact_time_span(new Calendar.ExactTimeSpan(new_start_time, new_end_time));
+    }
+    
+    /**
+     * Convert an {@link Event} from an all-day to a timed event by only adding the time.
+     *
+     * Returns with no changes if {@link is_all_day} is false.
+     */
+    public void all_day_to_timed_event(Calendar.WallTime start_time, Calendar.WallTime end_time,
+        Calendar.Timezone timezone) {
+        if (!is_all_day)
+            return;
+        
+        // create exact time span using these parameters
+        set_event_exact_time_span(
+            new Calendar.ExactTimeSpan(
+                new Calendar.ExactTime(timezone, date_span.start_date, start_time),
+                new Calendar.ExactTime(timezone, date_span.end_date, end_time)
+            )
+        );
+    }
+    
+    /**
+     * Convert an {@link Event} from a timed event to an all-day event by removing the time.
+     *
+     * Returns with no changes if {@link is_all_day} is true.
+     */
+    public void timed_to_all_day_event() {
+        if (!is_all_day)
+            set_event_date_span(get_event_date_span(null));
     }
     
     /**
@@ -327,8 +406,11 @@ public class Event : Instance, Gee.Comparable<Event> {
     /**
      * @inheritDoc
      */
-    public override bool is_valid() {
-        return base.is_valid() && (date_span != null || exact_time_span != null);
+    public override bool is_valid(bool and_useful) {
+        if (and_useful && String.is_empty(summary))
+            return false;
+        
+        return base.is_valid(and_useful) && (date_span != null || exact_time_span != null);
     }
     
     /**
@@ -372,6 +454,13 @@ public class Event : Instance, Gee.Comparable<Event> {
         if (compare != 0)
             return compare;
         
+        // rid
+        if (rid != null && other.rid != null) {
+            compare = rid.compare_to(other.rid);
+            if (compare != 0)
+                return compare;
+        }
+        
         // summary
         compare = strcmp(summary, other.summary);
         if (compare != 0)
@@ -382,39 +471,13 @@ public class Event : Instance, Gee.Comparable<Event> {
         if (compare != 0)
             return compare;
         
-        // if recurring, go by sequence number, as the UID and RID are the same for all instances
-        if (is_recurring) {
-            compare = sequence - other.sequence;
-            if (compare != 0)
-                return compare;
-        }
+        // use sequence number if available
+        compare = sequence - other.sequence;
+        if (compare != 0)
+            return compare;
         
         // stabilize with UIDs
         return uid.compare_to(other.uid);
-    }
-    
-    public override bool equal_to(Component.Instance other) {
-        Component.Event? other_event = other as Component.Event;
-        if (other_event == null)
-            return false;
-        
-        if (this == other_event)
-            return true;
-        
-        if (is_recurring != other_event.is_recurring)
-            return false;
-        
-        if (is_recurring && !rid.equal_to(other_event.rid))
-            return false;
-        
-        if (sequence != other_event.sequence)
-            return false;
-        
-        return base.equal_to(other);
-    }
-    
-    public override uint hash() {
-        return uid.hash() ^ ((rid != null) ? rid.hash() : 0) ^ sequence;
     }
     
     public override string to_string() {

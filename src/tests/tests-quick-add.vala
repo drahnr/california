@@ -8,8 +8,14 @@ namespace California.Tests {
 
 private class QuickAdd : UnitTest.Harness {
     public QuickAdd() {
+        add_case("null-details", null_details);
+        add_case("blank", blank);
+        add_case("punct", punct);
         add_case("summary", summary);
+        add_case("summary-with-blanks", summary_with_blanks);
+        add_case("summary-with-punct", summary_with_punct);
         add_case("summary-location", summary_location);
+        add_case("valid-no-summary", valid_no_summary);
         add_case("with-12hr-time", with_12hr_time);
         add_case("with-24hr-time", with_24hr_time);
         add_case("with-day-of-week", with_day_of_week);
@@ -27,6 +33,10 @@ private class QuickAdd : UnitTest.Harness {
         add_case("midnight-to-one", midnight_to_one);
         add_case("separate-am", separate_am);
         add_case("separate-pm", separate_pm);
+        add_case("start-date-ordinal", start_date_ordinal);
+        add_case("end-date-ordinal", end_date_ordinal);
+        add_case("simple-and", simple_and);
+        add_case("this-weekend", this_weekend);
     }
     
     protected override void setup() throws Error {
@@ -39,10 +49,47 @@ private class QuickAdd : UnitTest.Harness {
         Calendar.terminate();
     }
     
+    private bool null_details() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(null, null);
+        
+        return !parser.event.is_valid(false);
+    }
+    
+    private bool blank() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(" ", null);
+        
+        return !parser.event.is_valid(false);
+    }
+    
+    private bool punct() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser("&", null);
+        
+        return !parser.event.is_valid(false)
+            && parser.event.summary == "&";
+    }
+    
     private bool summary() throws Error {
         Component.DetailsParser parser = new Component.DetailsParser("meet with Alice", null);
         
         return parser.event.summary == "meet with Alice"
+            && parser.event.location == null
+            && parser.event.exact_time_span == null
+            && parser.event.date_span == null;
+    }
+    
+    private bool summary_with_blanks() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser("   meet  with   Alice    ", null);
+        
+        return parser.event.summary == "meet with Alice"
+            && parser.event.location == null
+            && parser.event.exact_time_span == null
+            && parser.event.date_span == null;
+    }
+    
+    private bool summary_with_punct() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser("meet with Alice & Bob", null);
+        
+        return parser.event.summary == "meet with Alice & Bob"
             && parser.event.location == null
             && parser.event.exact_time_span == null
             && parser.event.date_span == null;
@@ -55,6 +102,18 @@ private class QuickAdd : UnitTest.Harness {
             && parser.event.location == "Bob's"
             && parser.event.exact_time_span == null
             && parser.event.date_span == null;
+    }
+    
+    private bool valid_no_summary(out string? dump) throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser("7pm to 9pm", null);
+        
+        dump = parser.event.source;
+        
+        // valid but not "useful"
+        return parser.event.is_valid(false)
+            && !parser.event.is_valid(true)
+            && California.String.is_empty(parser.event.summary)
+            && parser.event.exact_time_span != null;
     }
     
     private bool with_12hr_time() throws Error {
@@ -177,7 +236,8 @@ private class QuickAdd : UnitTest.Harness {
         Component.DetailsParser parser = new Component.DetailsParser(
             "12:30pm Friday Lunch with Eric and Charles", null);
         
-        Calendar.Date friday = Calendar.System.today.upcoming(Calendar.DayOfWeek.FRI, true);
+        Calendar.Date friday = Calendar.System.today.upcoming(true,
+            date => date.day_of_week.equal_to(Calendar.DayOfWeek.FRI));
         
         Calendar.ExactTime start = new Calendar.ExactTime(Calendar.Timezone.local, friday,
             new Calendar.WallTime(12, 30, 0));
@@ -260,6 +320,59 @@ private class QuickAdd : UnitTest.Harness {
         
         return parser.event.summary == "Dinner"
             && parser.event.exact_time_span.start_exact_time.equal_to(start);
+    }
+    
+    private bool start_date_ordinal() throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Dinner May 1st", null);
+        
+        Calendar.Date start = new Calendar.Date(Calendar.DayOfMonth.for(1), Calendar.Month.MAY,
+            Calendar.System.today.year);
+        
+        return parser.event.summary == "Dinner"
+            && parser.event.date_span.start_date.equal_to(start);
+    }
+    
+    private bool end_date_ordinal(out string? dump) throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Off-site May 1st to May 2nd", null);
+        
+        dump = parser.event.source;
+        
+        Calendar.Date start = new Calendar.Date(Calendar.DayOfMonth.for(1), Calendar.Month.MAY,
+            Calendar.System.today.year);
+        Calendar.Date end = new Calendar.Date(Calendar.DayOfMonth.for(2), Calendar.Month.MAY,
+            Calendar.System.today.year);
+        
+        return parser.event.summary == "Off-site"
+            && parser.event.date_span.start_date.equal_to(start)
+            && parser.event.date_span.end_date.equal_to(end);
+    }
+    
+    private bool simple_and(out string? dump) throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Manga & Anime Festival Saturday and Sunday at Airport Hyatt, Shelbyville", null);
+        
+        dump = parser.event.source;
+        
+        return parser.event.summary == "Manga & Anime Festival at Airport Hyatt, Shelbyville"
+            && parser.event.location == "Airport Hyatt, Shelbyville"
+            && parser.event.is_all_day
+            && parser.event.date_span.start_date.day_of_week == Calendar.DayOfWeek.SAT
+            && parser.event.date_span.end_date.day_of_week == Calendar.DayOfWeek.SUN;
+    }
+    
+    private bool this_weekend(out string? dump) throws Error {
+        Component.DetailsParser parser = new Component.DetailsParser(
+            "Manga & Anime Festival this weekend at Airport Hyatt, Shelbyville", null);
+        
+        dump = parser.event.source;
+        
+        return parser.event.summary == "Manga & Anime Festival at Airport Hyatt, Shelbyville"
+            && parser.event.location == "Airport Hyatt, Shelbyville"
+            && parser.event.is_all_day
+            && parser.event.date_span.start_date.day_of_week == Calendar.DayOfWeek.SAT
+            && parser.event.date_span.end_date.day_of_week == Calendar.DayOfWeek.SUN;
     }
 }
 

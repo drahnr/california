@@ -16,6 +16,7 @@ namespace California.Calendar {
 public class DayOfMonth : BaseObject, Gee.Comparable<DayOfMonth>, Gee.Hashable<DayOfMonth> {
     public const int MIN = 1;
     public const int MAX = 31;
+    public const int COUNT = MAX - MIN + 1;
     
     private static DayOfMonth[]? days = null;
     
@@ -23,6 +24,13 @@ public class DayOfMonth : BaseObject, Gee.Comparable<DayOfMonth>, Gee.Hashable<D
      * The one-based integer value of this day of the month.
      */
     public int value { get; private set; }
+    
+    /**
+     * Returns the 1-based week of the month this day resides in.
+     *
+     * For example, if this is the first Monday of the month, returns 1.
+     */
+    public int week_of_month { get { return ((value - 1) / DayOfWeek.COUNT) + 1; } }
     
     /**
      * Returns the day number as an informal (no leading zero) string.
@@ -44,7 +52,7 @@ public class DayOfMonth : BaseObject, Gee.Comparable<DayOfMonth>, Gee.Hashable<D
     }
     
     internal static void init() {
-        days = new DayOfMonth[MAX - MIN + 1];
+        days = new DayOfMonth[COUNT];
         for (int ctr = MIN; ctr <= MAX; ctr++)
             days[ctr - MIN] = new DayOfMonth(ctr);
     }

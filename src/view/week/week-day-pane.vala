@@ -46,7 +46,7 @@ internal class DayPane : Pane, Common.InstanceContainer {
     public Calendar.Span contained_span { get { return date; } }
     
     private Gee.TreeSet<Component.Event> days_events = new Gee.TreeSet<Component.Event>();
-    private uint minutes_timeout_id = 0;
+    private Scheduled? scheduled_monitor = null;
     
     public DayPane(Grid owner, Calendar.Date date) {
         base (owner, -1);
@@ -64,8 +64,6 @@ internal class DayPane : Pane, Common.InstanceContainer {
     ~DayPane() {
         Calendar.System.instance.is_24hr_changed.disconnect(queue_draw);
         Calendar.System.instance.today_changed.disconnect(on_today_changed);
-        
-        cancel_monitor_minutes();
     }
     
     private void on_today_changed(Calendar.Date old_today, Calendar.Date new_today) {
@@ -79,7 +77,7 @@ internal class DayPane : Pane, Common.InstanceContainer {
     // If this pane is showing the current date, need to update once a minute to move the horizontal
     // minute indicator
     private void schedule_monitor_minutes() {
-        cancel_monitor_minutes();
+        scheduled_monitor = null;
         
         if (!date.equal_to(Calendar.System.today))
             return;
@@ -87,33 +85,24 @@ internal class DayPane : Pane, Common.InstanceContainer {
         // find the number of seconds remaining in this minute and schedule an update then
         int remaining_sec = (Calendar.WallTime.SECONDS_PER_MINUTE - Calendar.System.now.second).clamp(
             0, Calendar.WallTime.SECONDS_PER_MINUTE);
-        minutes_timeout_id = Timeout.add_seconds(remaining_sec, on_minute_changed);
+        scheduled_monitor = new Scheduled.once_after_sec(remaining_sec, on_minute_changed);
     }
     
-    private bool on_minute_changed() {
-        // done this iteration
-        minutes_timeout_id = 0;
-        
+    private void on_minute_changed() {
         // repaint time indicator
         queue_draw();
         
         // reschedule
         schedule_monitor_minutes();
-        
-        return false;
-    }
-    
-    private void cancel_monitor_minutes() {
-        if (minutes_timeout_id == 0)
-            return;
-        
-        Source.remove(minutes_timeout_id);
-        minutes_timeout_id = 0;
     }
     
     public void add_event(Component.Event event) {
         if (!days_events.add(event))
             return;
+        
+        event.notify[Component.Event.PROP_SUMMARY].connect(queue_draw);
+        event.notify[Component.Event.PROP_DATE_SPAN].connect(on_update_date_time);
+        event.notify[Component.Event.PROP_EXACT_TIME_SPAN].connect(on_update_date_time);
         
         queue_draw();
     }
@@ -122,11 +111,27 @@ internal class DayPane : Pane, Common.InstanceContainer {
         if (!days_events.remove(event))
             return;
         
+        event.notify[Component.Event.PROP_SUMMARY].disconnect(queue_draw);
+        event.notify[Component.Event.PROP_DATE_SPAN].disconnect(on_update_date_time);
+        event.notify[Component.Event.PROP_EXACT_TIME_SPAN].disconnect(on_update_date_time);
+        
         queue_draw();
     }
     
     public void clear_events() {
         days_events.clear();
+        
+        queue_draw();
+    }
+    
+    private void on_update_date_time(Object object, ParamSpec param) {
+        Component.Event event = (Component.Event) object;
+        
+        // remove entirely if not in this date any more, otherwise remove and re-add to re-sort
+        if (!(date in event.get_event_date_span(Calendar.System.timezone)))
+            remove_event(event);
+        else if (days_events.remove(event))
+            days_events.add(event);
         
         queue_draw();
     }

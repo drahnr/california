@@ -149,9 +149,15 @@ internal abstract class EventsCell : Gtk.EventBox, InstanceContainer {
         if (a == b)
             return 0;
         
-        if (!a.is_day_spanning && !b.is_day_spanning)
-            return a.compare_to(b);
+        // * if neither are day spanning (i.e. all-day or timed that cross midnight) fall back on
+        // regular comparison
+        // * if one is day-spanning but not the other, day-spanning floats to the top
+        if (!a.is_day_spanning)
+            return !b.is_day_spanning ? a.compare_to(b) : 1;
+        else if (!b.is_day_spanning)
+            return -1;
         
+        // both are day-spanning use algorithm described above to prevent gaps
         Calendar.DateSpan a_span = a.get_event_date_span(Calendar.Timezone.local);
         Calendar.DateSpan b_span = b.get_event_date_span(Calendar.Timezone.local);
         

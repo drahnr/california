@@ -4,24 +4,24 @@
 <id type="desktop">california.desktop</id>
 <metadata_license>CC0</metadata_license>
 <project_license>LGPL-2.1+</project_license>
-<summary>GNOME 3 calendar</summary>
+<_summary>GNOME 3 calendar</_summary>
 <description>
-<p>
+<_p>
 California is a new calendar application for GNOME 3 designed to let you work with your
 calendars quickly and easily.  It provides month and week views of your schedule and easy
 ways to add and update events, including a Quick Add feature which allows you to type the
 event details and have them added to your calendar without filling out a form.
-</p>
-<p>
+</_p>
+<_p>
 California is currently in beta development and has a limited but growing set of features:
-</p>
+</_p>
 <ul>
-<li>Modern, clean interface</li>
-<li>Month and week view of your schedule</li>
-<li>Quick setup (if any is required at all)</li>
-<li>Integrates with Evolution Data Server</li>
-<li>Quickly add events with a natural-language parser</li>
-<li>Works with Google, WebCal, and CalDAV servers</li>
+<_li>Modern, clean interface</_li>
+<_li>Month and week view of your schedule</_li>
+<_li>Quick setup (if any is required at all)</_li>
+<_li>Integrates with Evolution Data Server</_li>
+<_li>Quickly add events with a natural-language parser</_li>
+<_li>Works with Google, WebCal, and CalDAV servers</_li>
 </ul>
 </description>
 <url type="homepage">https://wiki.gnome.org/Apps/California</url>

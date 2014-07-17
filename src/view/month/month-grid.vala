@@ -50,6 +50,7 @@ private class Grid : Gtk.Grid {
     private Backing.CalendarSubscriptionManager? subscriptions = null;
     private Gdk.EventType button_press_type = Gdk.EventType.NOTHING;
     private Gdk.Point button_press_point = Gdk.Point();
+    private Scheduled? scheduled_subscription_update = null;
     
     public Grid(Controller owner, Calendar.MonthOfYear month_of_year) {
         this.owner = owner;
@@ -207,10 +208,8 @@ private class Grid : Gtk.Grid {
             if (diff < 0)
                 diff = diff.abs() + 1;
             
-            Timeout.add(300 + (diff * 100), () => {
+            scheduled_subscription_update = new Scheduled.once_after_msec(300 + (diff * 100), () => {
                 subscriptions.start_async.begin();
-                
-                return false;
             });
         }
     }

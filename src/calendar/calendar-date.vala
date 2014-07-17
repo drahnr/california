@@ -72,6 +72,7 @@ public class Date : Unit<Date>, Gee.Comparable<Date>, Gee.Hashable<Date> {
     
     public DayOfWeek day_of_week { get; private set; }
     public DayOfMonth day_of_month { get; private set; }
+    public int day_of_year { get; private set; }
     public Month month { get; private set; }
     public Year year { get; private set; }
     
@@ -93,6 +94,7 @@ public class Date : Unit<Date>, Gee.Comparable<Date>, Gee.Hashable<Date> {
         
         day_of_week = DayOfWeek.from_gdate(gdate);
         this.day_of_month = day_of_month;
+        day_of_year = (int) gdate.get_day_of_year();
         this.month = month;
         this.year = year;
     }
@@ -112,6 +114,7 @@ public class Date : Unit<Date>, Gee.Comparable<Date>, Gee.Hashable<Date> {
         assert(gdate.valid());
         
         day_of_week = DayOfWeek.from_gdate(gdate);
+        day_of_year = (int) gdate.get_day_of_year();
     }
     
     /**
@@ -130,6 +133,7 @@ public class Date : Unit<Date>, Gee.Comparable<Date>, Gee.Hashable<Date> {
         
         day_of_week = DayOfWeek.from_gdate(gdate);
         day_of_month = DayOfMonth.from_gdate(gdate);
+        day_of_year = (int) gdate.get_day_of_year();
         month = Month.from_gdate(gdate);
         year = new Year.from_gdate(gdate);
     }
@@ -252,41 +256,35 @@ public class Date : Unit<Date>, Gee.Comparable<Date>, Gee.Hashable<Date> {
     }
     
     /**
-     * Returns the {@link Date} of the upcoming (next chronological) {@link DayOfWeek}.
+     * Returns the {@link Date} of the upcoming (next chronological) Date that matches
+     * the predicate's requirements.
      *
-     * Set {@link includes_this_day} to true if this Date is to be considered "upcoming", that is,
-     * if it falls on the day of the week, it is returned.
+     * inclusive indicates if this Date is included in the search.
      *
      * @see prior
      */
-    public Date upcoming(DayOfWeek dow, bool includes_this_day) {
-        return upcoming_prior(dow, includes_this_day, 1);
+    public Date upcoming(bool inclusive, Gee.Predicate<Calendar.Date> predicate) {
+        return upcoming_prior(inclusive, 1, predicate);
     }
     
     /**
-     * Returns the {@link Date} of the prior (previous chronological) {@link DayOfWeek}.
+     * Returns the {@link Date} of the prior (next chronological) Date that matches
+     * the predicate's requirements.
      *
-     * Set {@link includes_this_day} to true if this Date is to be considered "prior", that is,
-     * if it falls on the day of the week, it is returned.
+     * inclusive indicates if this Date is included in the search.
      *
      * @see upcoming
      */
-    public Date prior(DayOfWeek dow, bool includes_this_day) {
-        return upcoming_prior(dow, includes_this_day, -1);
+    public Date prior(bool inclusive, Gee.Predicate<Calendar.Date> predicate) {
+        return upcoming_prior(inclusive, -1, predicate);
     }
     
-    private Date upcoming_prior(DayOfWeek dow, bool includes_this_day, int adjustment) {
-        // look for current date being the one
-        if (day_of_week.equal_to(dow) && includes_this_day)
-            return this;
+    private Date upcoming_prior(bool inclusive, int adjustment, Gee.Predicate<Calendar.Date> predicate) {
+        Calendar.Date current = inclusive ? this : adjust(adjustment);
+        while (!predicate(current))
+            current = current.adjust(adjustment);
         
-        // find a Date for day of the week ... brute force isn't great, but it works
-        Date upcoming_prior = this;
-        for (;;) {
-            upcoming_prior = upcoming_prior.adjust(adjustment);
-            if (upcoming_prior.day_of_week.equal_to(dow))
-                return upcoming_prior;
-        }
+        return current;
     }
     
     /**

@@ -11,6 +11,8 @@ private class String : UnitTest.Harness {
         add_case("strip-zeroes-space", strip_zeroes_space);
         add_case("strip-zeroes-slash", strip_zeroes_slash);
         add_case("strip-zeroes-multiple", strip_zeroes_multiple);
+        add_case("reduce-whitespace", reduce_whitespace);
+        add_case("reduce-nonspace-whitespace", reduce_nonspace_whitespace);
     }
     
     protected override void setup() throws Error {
@@ -37,6 +39,22 @@ private class String : UnitTest.Harness {
         string result = California.String.remove_leading_chars("001/2/03/4", '0', " /");
         
         return result == "1/2/3/4";
+    }
+    
+    private bool test_reduce_whitespace(string instr, string expected, out string? dump) throws Error {
+        string result = California.String.reduce_whitespace(instr);
+        
+        dump = "\"%s\" => \"%s\", expected \"%s\"".printf(instr, result, expected);
+        
+        return result == expected;
+    }
+    
+    private bool reduce_whitespace(out string? dump) throws Error {
+        return test_reduce_whitespace("  a  b  c  ", "a b c", out dump);
+    }
+    
+    private bool reduce_nonspace_whitespace(out string? dump) throws Error {
+        return test_reduce_whitespace("\t\ta\n\nb\r\rc\t\t", "a\nb\rc", out dump);
     }
 }
 

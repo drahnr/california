@@ -67,7 +67,7 @@ public class GoogleCalendarListPane : Gtk.Grid, Toolkit.Card {
         return label;
     }
     
-    public void jumped_to(Toolkit.Card? from, Value? message) {
+    public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
         Message? feeds = message as Message;
         assert(feeds != null);
         
@@ -169,16 +169,23 @@ public class GoogleCalendarListPane : Gtk.Grid, Toolkit.Card {
         }
         
         debug("Subscribing to %s", uri.to_string(false));
+        
+        Gdk.Cursor? cursor = Toolkit.set_busy(this);
+        
+        Error? subscribe_err = null;
         try {
             yield store.subscribe_caldav_async(calendar.title, uri, username,
                 calendar.color.to_hexadecimal(), null);
         } catch (Error err) {
-            notify_failure(_("Unable to subscribe to %s: %s").printf(calendar.title, err.message));
-            
-            return;
+            subscribe_err = err;
         }
         
-        notify_success();
+        Toolkit.set_unbusy(this, cursor);
+        
+        if (subscribe_err == null)
+            notify_success();
+        else
+            notify_failure(_("Unable to subscribe to %s: %s").printf(calendar.title, subscribe_err.message));
     }
 }
 

@@ -57,9 +57,9 @@ namespace iCal {
 		[CCode (cname = "icalcomponent_add_property")]
 		public void add_property (iCal.icalproperty property);
 		[CCode (cname = "icalcomponent_as_ical_string")]
-		public string as_ical_string ();
+		public unowned string as_ical_string ();
 		[CCode (cname = "icalcomponent_as_ical_string_r")]
-		public unowned string as_ical_string_r ();
+		public string as_ical_string_r ();
 		[CCode (cname = "icalcomponent_begin_component")]
 		public unowned iCal.icalcompiter begin_component (iCal.icalcomponent_kind kind);
 		[CCode (cname = "icalcomponent_check_restrictions")]
@@ -225,7 +225,7 @@ namespace iCal {
 		[CCode (cname = "icaldurationtype_as_ical_string")]
 		public unowned string as_ical_string ();
 		[CCode (cname = "icaldurationtype_as_ical_string_r")]
-		public unowned string as_ical_string_r ();
+		public string as_ical_string_r ();
 		[CCode (cname = "icaldurationtype_as_int")]
 		public int as_int ();
 		[CCode (cname = "icaldurationtype_bad_duration")]
@@ -253,7 +253,7 @@ namespace iCal {
 		[CCode (cname = "icalparameter_as_ical_string")]
 		public unowned string as_ical_string ();
 		[CCode (cname = "icalparameter_as_ical_string_r")]
-		public unowned string as_ical_string_r ();
+		public string as_ical_string_r ();
 		[CCode (cname = "icalparameter_new_charset", has_construct_function = false)]
 		public icalparameter.charset (string v);
 		[CCode (cname = "icalparameter_new_clone", has_construct_function = false)]
@@ -507,7 +507,7 @@ namespace iCal {
 		[CCode (cname = "icalproperty_as_ical_string")]
 		public unowned string as_ical_string ();
 		[CCode (cname = "icalproperty_as_ical_string_r")]
-		public unowned string as_ical_string_r ();
+		public string as_ical_string_r ();
 		[CCode (cname = "icalproperty_new_attach", has_construct_function = false)]
 		public icalproperty.attach (iCal.icalattach v);
 		[CCode (cname = "icalproperty_new_attendee", has_construct_function = false)]
@@ -579,7 +579,7 @@ namespace iCal {
 		[CCode (cname = "icalproperty_enum_to_string")]
 		public static unowned string enum_to_string (int e);
 		[CCode (cname = "icalproperty_enum_to_string_r")]
-		public static unowned string enum_to_string_r (int e);
+		public string enum_to_string_r (int e);
 		[CCode (cname = "icalproperty_new_exdate", has_construct_function = false)]
 		public icalproperty.exdate (iCal.icaltimetype v);
 		[CCode (cname = "icalproperty_new_expand", has_construct_function = false)]
@@ -703,7 +703,7 @@ namespace iCal {
 		[CCode (cname = "icalproperty_get_parameter_as_string")]
 		public unowned string get_parameter_as_string (string name);
 		[CCode (cname = "icalproperty_get_parameter_as_string_r")]
-		public unowned string get_parameter_as_string_r (string name);
+		public string get_parameter_as_string_r (string name);
 		[CCode (cname = "icalproperty_get_percentcomplete")]
 		public int get_percentcomplete ();
 		[CCode (cname = "icalproperty_get_permission")]
@@ -715,7 +715,7 @@ namespace iCal {
 		[CCode (cname = "icalproperty_get_property_name")]
 		public unowned string get_property_name ();
 		[CCode (cname = "icalproperty_get_property_name_r")]
-		public unowned string get_property_name_r ();
+		public string get_property_name_r ();
 		[CCode (cname = "icalproperty_get_query")]
 		public unowned string get_query ();
 		[CCode (cname = "icalproperty_get_queryid")]
@@ -783,7 +783,7 @@ namespace iCal {
 		[CCode (cname = "icalproperty_get_value_as_string")]
 		public unowned string get_value_as_string ();
 		[CCode (cname = "icalproperty_get_value_as_string_r")]
-		public unowned string get_value_as_string_r ();
+		public string get_value_as_string_r ();
 		[CCode (cname = "icalproperty_get_version")]
 		public unowned string get_version ();
 		[CCode (cname = "icalproperty_get_x")]
@@ -1442,7 +1442,7 @@ namespace iCal {
 		[CCode (cname = "icalvalue_as_ical_string")]
 		public unowned global::string as_ical_string ();
 		[CCode (cname = "icalvalue_as_ical_string_r")]
-		public unowned global::string as_ical_string_r ();
+		public global::string as_ical_string_r ();
 		[CCode (cname = "icalvalue_new_attach", has_construct_function = false)]
 		public icalvalue.attach (iCal.icalattach attach);
 		[CCode (cname = "icalvalue_new_binary", has_construct_function = false)]
@@ -1678,7 +1678,8 @@ namespace iCal {
 	[Compact]
 	public class sspm_minor_type {
 	}
-	[CCode (cheader_filename = "libical/ical.h")]
+	[CCode (cheader_filename = "libical/ical.h", cname="struct icaldatetimeperiodtype")]
+	[SimpleType]
 	public struct icaldatetimeperiodtype {
 		public iCal.icaltimetype time;
 		public iCal.icalperiodtype period;
@@ -1688,7 +1689,8 @@ namespace iCal {
 		public float lat;
 		public float lon;
 	}
-	[CCode (cheader_filename = "libical/ical.h")]
+	[CCode (cheader_filename = "libical/ical.h", cname="struct icalperiodtype")]
+	[SimpleType]
 	public struct icalperiodtype {
 		public iCal.icaltimetype start;
 		public iCal.icaltimetype end;
@@ -1696,7 +1698,7 @@ namespace iCal {
 		[CCode (cname = "icalperiodtype_as_ical_string")]
 		public unowned string as_ical_string ();
 		[CCode (cname = "icalperiodtype_as_ical_string_r")]
-		public unowned string as_ical_string_r ();
+		public string as_ical_string_r ();
 		[CCode (cname = "icalperiodtype_from_string")]
 		public static iCal.icalperiodtype from_string (string str);
 		[CCode (cname = "icalperiodtype_is_null_period")]
@@ -1706,35 +1708,29 @@ namespace iCal {
 		[CCode (cname = "icalperiodtype_null_period")]
 		public static iCal.icalperiodtype null_period ();
 	}
-	[CCode (cheader_filename = "libical/ical.h")]
+	public const int RECURRENCE_ARRAY_MAX;
+	public const int RUCURRENCE_ARRAY_MAX_BYTE;
+	[CCode (cheader_filename = "libical/ical.h", cname="struct icalrecurrencetype")]
+	[SimpleType]
 	public struct icalrecurrencetype {
 		public iCal.icalrecurrencetype_frequency freq;
 		public iCal.icaltimetype until;
 		public int count;
 		public short interval;
 		public iCal.icalrecurrencetype_weekday week_start;
-		[CCode (array_length = false)]
-		public weak short[] by_second;
-		[CCode (array_length = false)]
-		public weak short[] by_minute;
-		[CCode (array_length = false)]
-		public weak short[] by_hour;
-		[CCode (array_length = false)]
-		public weak short[] by_day;
-		[CCode (array_length = false)]
-		public weak short[] by_month_day;
-		[CCode (array_length = false)]
-		public weak short[] by_year_day;
-		[CCode (array_length = false)]
-		public weak short[] by_week_no;
-		[CCode (array_length = false)]
-		public weak short[] by_month;
-		[CCode (array_length = false)]
-		public weak short[] by_set_pos;
+		public unowned short by_second[61];
+		public unowned short by_minute[61];
+		public unowned short by_hour[25];
+		public unowned short by_day[364];
+		public unowned short by_month_day[32];
+		public unowned short by_year_day[367];
+		public unowned short by_week_no[54];
+		public unowned short by_month[13];
+		public unowned short by_set_pos[367];
 		[CCode (cname = "icalrecurrencetype_as_string")]
 		public unowned string as_string ();
 		[CCode (cname = "icalrecurrencetype_as_string_r")]
-		public unowned string as_string_r ();
+		public string as_string_r ();
 		[CCode (cname = "icalrecurrencetype_clear")]
 		public void clear ();
 		[CCode (cname = "icalrecurrencetype_day_day_of_week")]
@@ -1752,7 +1748,7 @@ namespace iCal {
 		[CCode (cname = "icalreqstattype_as_string")]
 		public unowned string as_string ();
 		[CCode (cname = "icalreqstattype_as_string_r")]
-		public unowned string as_string_r ();
+		public string as_string_r ();
 		[CCode (cname = "icalreqstattype_from_string")]
 		public static iCal.icalreqstattype from_string (string str);
 	}
@@ -2460,7 +2456,7 @@ namespace iCal {
 	[CCode (cheader_filename = "libical/ical.h", cname = "icalenum_reqstat_code")]
 	public static unowned string icalenum_reqstat_code (iCal.icalrequeststatus stat);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icalenum_reqstat_code_r")]
-	public static unowned string icalenum_reqstat_code_r (iCal.icalrequeststatus stat);
+	public static string icalenum_reqstat_code_r (iCal.icalrequeststatus stat);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icalenum_reqstat_desc")]
 	public static unowned string icalenum_reqstat_desc (iCal.icalrequeststatus stat);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icalenum_reqstat_major")]
@@ -2518,11 +2514,11 @@ namespace iCal {
 	[CCode (cheader_filename = "libical/ical.h", cname = "icallangbind_property_eval_string")]
 	public static unowned string icallangbind_property_eval_string (iCal.icalproperty prop, string sep);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icallangbind_property_eval_string_r")]
-	public static unowned string icallangbind_property_eval_string_r (iCal.icalproperty prop, string sep);
+	public static string icallangbind_property_eval_string_r (iCal.icalproperty prop, string sep);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icallangbind_quote_as_ical")]
 	public static unowned string icallangbind_quote_as_ical (string str);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icallangbind_quote_as_ical_r")]
-	public static unowned string icallangbind_quote_as_ical_r (string str);
+	public static string icallangbind_quote_as_ical_r (string str);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icallangbind_string_to_open_flag")]
 	public static int icallangbind_string_to_open_flag (string str);
 	[CCode (cheader_filename = "libical/ical.h", cname = "icalmemory_add_tmp_buffer")]

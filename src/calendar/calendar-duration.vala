@@ -42,41 +42,6 @@ public class Duration : BaseObject {
             + seconds;
     }
     
-    /**
-     * Parses the two tokens into a {@link Duration}.
-     *
-     * parse() is looking for a pattern where the first token is a number and the second a string
-     * of units of time (localized), either hours, minutes, or seconds.  null is returned if that
-     * pattern is not located.
-     *
-     * Future expansion could include a pattern where the first token has a unit as a suffix, i.e.
-     * "3hrs" or "4m".
-     *
-     * It's possible for this call to return a Duration of zero time.
-     */
-    public static Duration? parse(string value, string unit) {
-        if (String.is_empty(value) || String.is_empty(unit))
-            return null;
-        
-        if (!String.is_numeric(value))
-            return null;
-        
-        int duration = int.parse(value);
-        if (duration < 0)
-            return null;
-        
-        if (unit in UNIT_DAYS)
-            return new Duration(duration);
-        
-        if (unit in UNIT_HOURS)
-            return new Duration(0, duration);
-        
-        if (unit in UNIT_MINS)
-            return new Duration(0, 0, duration);
-        
-        return null;
-    }
-    
     public override string to_string() {
         return "%ss".printf(seconds.to_string());
     }

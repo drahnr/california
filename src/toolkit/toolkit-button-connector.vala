@@ -27,7 +27,7 @@ public class ButtonConnector : EventConnector {
     
     // The actual ButtonEvent, with some useful functionality for release timeouts
     private class InternalButtonEvent : ButtonEvent {
-        private uint timeout_id = 0;
+        private Scheduled? scheduled_timeout = null;
         
         public signal void release_timeout();
         
@@ -35,37 +35,22 @@ public class ButtonConnector : EventConnector {
             base (widget, event);
         }
         
-        ~InternalButtonEvent() {
-            cancel_timeout();
-        }
-        
-        private void cancel_timeout() {
-            if (timeout_id == 0)
-                return;
-            
-            Source.remove(timeout_id);
-            timeout_id = 0;
-        }
-        
         public override void update_press(Gtk.Widget widget, Gdk.EventButton press_event) {
             base.update_press(widget, press_event);
             
-            cancel_timeout();
+            if (scheduled_timeout != null)
+                scheduled_timeout.cancel();
         }
         
         public override void update_release(Gtk.Widget widget, Gdk.EventButton release_event) {
             base.update_release(widget, release_event);
             
-            cancel_timeout();
-            timeout_id = Timeout.add(CLICK_DETERMINATION_DELAY_MSEC, on_timeout, Priority.LOW);
+            scheduled_timeout = new Scheduled.once_after_msec(CLICK_DETERMINATION_DELAY_MSEC,
+                on_timeout, Priority.LOW);
         }
         
-        private bool on_timeout() {
-            timeout_id = 0;
-            
+        private void on_timeout() {
             release_timeout();
-            
-            return false;
         }
     }
     

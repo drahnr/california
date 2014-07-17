@@ -19,6 +19,10 @@ namespace California.Component {
  * The second is to update the mutable properties themselves, which will then update the underlying
  * iCal component.
  *
+ * Instances produced by {@link Backing.CalendarSourceSubscription}s will be updated by the
+ * subscription if the Instance is updated or removed locally or remotely.  Cloned Instances,
+ * however, are not automatically updated.  See {@link clone}.
+ *
  * Alarms will be contained within Instance components.  Timezones are handled separately.
  *
  * Instance also offers a number of methods to convert iCal structures into internal objects.
@@ -29,8 +33,12 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public const string PROP_DTSTAMP = "dtstamp";
     public const string PROP_UID = "uid";
     public const string PROP_ICAL_COMPONENT = "ical-component";
+    public const string PROP_RRULE = "rrule";
     public const string PROP_RID = "rid";
+    public const string PROP_EXDATES = "exdates";
+    public const string PROP_RDATES = "rdates";
     public const string PROP_SEQUENCE = "sequence";
+    public const string PROP_MASTER = "master";
     
     protected const string PROP_IN_FULL_UPDATE = "in-full-update";
     
@@ -61,6 +69,15 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public UID uid { get; private set; }
     
     /**
+     * {@link RecurrenceRule} (RRULE) for {@link Instance}.
+     *
+     * If the RecurrenceRule is itself altered, that signal is reflected to {@link altered}.
+     *
+     * @see make_recurring
+     */
+    public RecurrenceRule? rrule { get; private set; default = null; }
+    
+    /**
      * The RECURRENCE-ID of a recurring component.
      *
      * See [[https://tools.ietf.org/html/rfc5545#section-3.8.4.4]]
@@ -68,11 +85,83 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public Component.DateTime? rid { get; set; default = null; }
     
     /**
-     * Returns true if the {@link Recurrable} is in fact a recurring instance.
+     * All EXDATEs (DATE-TIME exceptions for recurring instances) in the {@link Instance}.
+     *
+     * Returns a read-only set of {@link DateTime}s.  Use {@link set_exdates} to change.
+     *
+     * See [[https://tools.ietf.org/html/rfc5545#section-3.8.5.1]]
+     */
+    private Gee.SortedSet<DateTime>? _exdates = null;
+    public Gee.SortedSet<DateTime>? exdates {
+        owned get {
+            return Collection.is_empty(_exdates) ? null : _exdates.read_only_view;
+        }
+        
+        set {
+            _exdates = value;
+        }
+    }
+    
+    /**
+     * All RDATEs (DATE-TIMEs manually set for recurring instances) in the {@link Instance}.
+     *
+     * See [[https://tools.ietf.org/html/rfc5545#section-3.8.5.2]]
+     */
+    private Gee.SortedSet<DateTime>? _rdates = null;
+    public Gee.SortedSet<DateTime>? rdates {
+        owned get {
+            return Collection.is_empty(_rdates) ? null : _rdates.read_only_view;
+        }
+        
+        set {
+            _rdates = value;
+        }
+    }
+    
+    /**
+     * Returns true if the {@link Instance} is a master instance.
+     *
+     * A master instance is one that has not been generated from another Instance's recurring
+     * rule (RRULE).  In practice, this means the Instance does not have a RECURRENCE-ID.
      *
      * @see rid
+     * @see rrule
      */
-    public bool is_recurring { get { return rid != null; } }
+    public bool is_master_instance { get { return rid == null; } }
+    
+    /**
+     * Returns true if the {@link Instance} is a generated recurring instance.
+     *
+     * A generated recurring instance is one that has been artificially constructed from another
+     * Instance's recurring rule (RRULE).  In practice, this means the Instance has a
+     * RECURRENCE-ID.
+     *
+     * @see rid
+     * @see Backing.CalendarSource.fetch_master_component_async
+     */
+    public bool is_generated_instance { get { return rid != null; } }
+    
+    /**
+     * Returns true if the master {@link Instance} can generate recurring instances.
+     *
+     * This indicates the Instance is a master Instance and can generate recurring instances from
+     * its RRULE.  In practice, this means the Instance has no RECURRENCE-ID but does have an
+     * RRULE.  (Generated instances will have the RRULE that construct them as well as a
+     * RECURRENCE-ID.)
+     *
+     * @see rid
+     * @see Backing.CalendarSource.fetch_master_component_async
+     */
+    public bool can_generate_instances { get { return rid == null && rrule != null; } }
+    
+    /**
+     * If a generated {@link Instance}, holds a reference to the master Instance that generated it.
+     *
+     * The {@link Backing} should do everything it can to provide a master Instance for all
+     * generated Instances.  However, if this is null it is not a guarantee this is a master
+     * Instance.  Use {@link is_master_instance}.
+     */
+    public Instance? master { get; internal set; default = null; }
     
     /**
      * The SEQUENCE of a VEVENT, VTODO, or VJOURNAL.
@@ -86,6 +175,11 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
      */
     private iCal.icalcomponent _ical_component;
     public iCal.icalcomponent ical_component { get { return _ical_component; } }
+    
+    /**
+     * Returns the iCal source for this {@link Instance}.
+     */
+    public string source { get { return ical_component.as_ical_string(); } }
     
     /**
      * True if inside {@link full_update}.
@@ -246,6 +340,17 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         
         sequence = ical_component.get_sequence();
         
+        try {
+            make_recurring(new RecurrenceRule.from_ical(ical_component, false));
+        } catch (ComponentError comperr) {
+            // ignored; generally means no RRULE in component
+            if (!(comperr is ComponentError.UNAVAILABLE))
+                debug("Unable to parse RRULE for %s: %s", to_string(), comperr.message);
+        }
+        
+        exdates = get_multiple_date_times(iCal.icalproperty_kind.EXDATE_PROPERTY);
+        rdates = get_multiple_date_times(iCal.icalproperty_kind.RDATE_PROPERTY);
+        
         // save own copy of component; no ownership transferrance w/ current bindings
         if (_ical_component != ical_component)
             _ical_component = ical_component.clone();
@@ -269,6 +374,29 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
                 ical_component.set_sequence(sequence);
             break;
             
+            case PROP_RRULE:
+                // always remove existing RRULE
+                remove_all_properties(iCal.icalproperty_kind.RRULE_PROPERTY);
+                
+                // add new one, if added
+                if (rrule != null)
+                    rrule.add_to_ical(ical_component);
+            break;
+            
+            case PROP_EXDATES:
+                if (Collection.is_empty(exdates))
+                    remove_all_properties(iCal.icalproperty_kind.EXDATE_PROPERTY);
+                else
+                    set_multiple_date_times(iCal.icalproperty_kind.EXDATE_PROPERTY, exdates);
+            break;
+            
+            case PROP_RDATES:
+                if (Collection.is_empty(rdates))
+                    remove_all_properties(iCal.icalproperty_kind.RDATE_PROPERTY);
+                else
+                    set_multiple_date_times(iCal.icalproperty_kind.RDATE_PROPERTY, rdates);
+            break;
+            
             default:
                 altered = false;
             break;
@@ -276,6 +404,47 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         
         if (altered)
             notify_altered(false);
+    }
+    
+    /**
+     * Make a detached copy of the {@link Instance}.
+     *
+     * This produces an exact copy of the Instance at the time of the call.  Unlike Instances
+     * produced by {@link Backing.CalendarSourceSubscription}s, cloned Instances are not
+     * automatically updated as local and/or remote changes are made.  This makes them good for
+     * editing (where a number of changes are made and stored in the Instance, only being submitted
+     * when the user gives the okay).
+     *
+     * Cloning will also clone the {@link master}, if present.
+     */
+    public abstract Component.Instance clone() throws Error;
+    
+    /**
+     * Add a {@link RecurrenceRule} to the {@link Instance}.
+     *
+     * Pass null to make the Instance non-recurring.
+     */
+    public void make_recurring(RecurrenceRule? rrule) {
+        if (this.rrule != null) {
+            this.rrule.notify.disconnect(on_rrule_updated);
+            this.rrule.by_rule_updated.disconnect(on_rrule_updated);
+        }
+        
+        if (rrule != null) {
+            rrule.notify.connect(on_rrule_updated);
+            rrule.by_rule_updated.connect(on_rrule_updated);
+        }
+        
+        this.rrule = rrule;
+    }
+    
+    private void on_rrule_updated() {
+        // remove old property, replace with new one
+        remove_all_properties(iCal.icalproperty_kind.RRULE_PROPERTY);
+        rrule.add_to_ical(ical_component);
+        
+        // count this as an alteration
+        notify_altered(false);
     }
     
     /**
@@ -300,19 +469,43 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     }
     
     /**
-     * Convenience method to convert a {@link Calendar.Date} to an iCal DATE.
+     * Convenience method to convert a collection of DATE/DATE-TIME properties into a SortedSet of
+     * {@link DateTime}s.
+     *
+     * @see set_multiple_date_times
      */
-    protected static void date_to_ical(Calendar.Date date, iCal.icaltimetype *ical_dt) {
-        ical_dt->year = date.year.value;
-        ical_dt->month = date.month.value;
-        ical_dt->day = date.day_of_month.value;
-        ical_dt->hour = 0;
-        ical_dt->minute = 0;
-        ical_dt->second = 0;
-        ical_dt->is_utc = 0;
-        ical_dt->is_date = 1;
-        ical_dt->is_daylight = 0;
-        ical_dt->zone = null;
+    protected Gee.SortedSet<DateTime>? get_multiple_date_times(iCal.icalproperty_kind kind) {
+        Gee.SortedSet<DateTime> date_times = new Gee.TreeSet<DateTime>();
+        
+        unowned iCal.icalproperty? prop = ical_component.get_first_property(kind);
+        while (prop != null) {
+            try {
+                date_times.add(new DateTime.from_property(prop));
+            } catch (ComponentError comperr) {
+                debug("Unable to parse DATE/DATE-TIME for %s: %s", kind.to_string(), comperr.message);
+            }
+            
+            prop = ical_component.get_next_property(kind);
+        }
+        
+        return date_times.size > 0 ? date_times : null;
+    }
+    
+    /**
+     * Convenience method to set (replace) a collection of DATE/DATE-TIME properties from a
+     * Collection of {@link DateTime}s.
+     *
+     * @see get_multiple_date_times
+     */
+    protected void set_multiple_date_times(iCal.icalproperty_kind kind, Gee.Collection<DateTime> date_times) {
+        remove_all_properties(kind);
+        
+        foreach (DateTime date_time in date_times) {
+            iCal.icalproperty prop = new iCal.icalproperty(kind);
+            prop.set_value(date_time.to_ical_value());
+            
+            ical_component.add_property(prop);
+        }
     }
     
     /**
@@ -327,24 +520,6 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
         date_to_ical(date_span.start_date, ical_dtstart);
         date_to_ical(date_span.end_date.adjust_by(dtend_inclusive ? 0 : 1, Calendar.DateUnit.DAY),
             ical_dtend);
-    }
-    
-    /**
-     * Convenience method to convert a {@link Calendar.ExactTime} to an iCal DATE-TIME.
-     */
-    protected static void exact_time_to_ical(Calendar.ExactTime exact_time, iCal.icaltimetype *ical_dt) {
-        ical_dt->year = exact_time.year.value;
-        ical_dt->month = exact_time.month.value;
-        ical_dt->day = exact_time.day_of_month.value;
-        ical_dt->hour = exact_time.hour;
-        ical_dt->minute = exact_time.minute;
-        ical_dt->second = exact_time.second;
-        ical_dt->is_utc = exact_time.tz.is_utc ? 1 : 0;
-        ical_dt->is_date = 0;
-        ical_dt->is_daylight = exact_time.is_dst ? 1 : 0;
-        ical_dt->zone = iCal.icaltimezone.get_builtin_timezone(exact_time.tz.zone.value);
-        if (ical_dt->zone == null)
-            message("Unable to get builtin iCal timezone for %s", exact_time.tz.zone.to_string());
     }
     
     /**
@@ -377,27 +552,44 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
      * present with proper values.
      *
      * The presence of {@link calendar_source} is not necessary to deem an Instance valid.
+     *
+     * and_useful indicates that, while technically valid according to the iCalendar specification,
+     * the Instance also has optional fields available that the user will almost likely need or
+     * require for the event to be of use.
      */
-    public virtual bool is_valid() {
+    public virtual bool is_valid(bool and_useful) {
         return dtstamp != null;
     }
     
     /**
-     * Equality is defined as {@link Component.Instance}s having the same UID.
+     * Equality is defined as {@link Component.Instance}s having the same {@link uid}, {@link rid},
+     * and {@link sequence}.
      *
      * Subclasses should override this and {@link hash} if more definite equality is necessary.
      */
     public virtual bool equal_to(Instance other) {
-        return (this != other) ? uid.equal_to(other.uid) : true;
+        if (this == other)
+            return true;
+        
+        if (is_generated_instance != other.is_generated_instance)
+            return false;
+        
+        if (is_generated_instance && !rid.equal_to(other.rid))
+            return false;
+        
+        if (sequence != other.sequence)
+            return false;
+        
+        return uid.equal_to(other.uid);
     }
     
     /**
-     * Hash is calculated using the {@link Instance} {@link UID}.
+     * Hash is calculated using the {@link Instance} {@link UID}, {@link rid}, and {@link sequence}.
      *
      * Subclasses should override if they override {@link equal_to}.
      */
     public virtual uint hash() {
-        return uid.hash();
+        return uid.hash() ^ ((rid != null) ? rid.hash() : 0) ^ sequence;
     }
 }
 

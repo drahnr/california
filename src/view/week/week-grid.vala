@@ -54,6 +54,8 @@ internal class Grid : Gtk.Box {
     private Gtk.ScrolledWindow scrolled_panes;
     private Gtk.Widget right_spacer;
     private bool vadj_init = false;
+    private Scheduled? scheduled_update_subscription = null;
+    private Scheduled? scheduled_realloc = null;
     
     public Grid(Controller owner, Calendar.Week week) {
         Object(orientation: Gtk.Orientation.VERTICAL, spacing: 0);
@@ -175,10 +177,8 @@ internal class Grid : Gtk.Box {
         if (diff != 0)
             diff = 300 + (diff * 100);
         
-        Timeout.add(diff, () => {
+        scheduled_update_subscription = new Scheduled.once_after_msec(diff, () => {
             subscriptions.start_async.begin();
-            
-            return false;
         });
         
         // watch for vertical adjustment to initialize to set the starting scroll position
@@ -267,10 +267,8 @@ internal class Grid : Gtk.Box {
     private void on_realloc_right_spacer() {
         // need to do outside of allocation signal due to some mechanism in GTK that prevents resizes
         // while resizing
-        Idle.add(() => {
+        scheduled_realloc = new Scheduled.once_at_idle(() => {
             right_spacer.set_size_request(scrolled_panes.get_vscrollbar().get_allocated_width(), -1);
-            
-            return false;
         });
     }
     
