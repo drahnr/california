@@ -337,39 +337,6 @@ public abstract class CalendarSourceSubscription : BaseObject {
         return instances.contains(uid) ? instances.get(uid) : null;
     }
     
-    /**
-     * Returns the master {@link Component.Instance} for the {@link Component.UID}.
-     *
-     * @returns null if the UID has not been sene.
-     */
-    public Component.Instance? master_for_uid(Component.UID uid) {
-        return traverse<Component.Instance>(instances.get(uid))
-            .first_matching(instance => instance.is_master_instance);
-    }
-    
-    /**
-     * Returns the seen {@link Component.Instance} matching the supplied (possibly partially
-     * filled-out) Instance.
-     *
-     * This is for duplicate detection, especially if the {@link Backing} is receiving raw iCal
-     * source and needs to verify if it's been parsed and introduced into the system.
-     *
-     * A blank Instance with partial fields filled out can be supplied.
-     */
-    public Component.Instance? has_instance(Component.Instance instance) {
-        Gee.Collection<Component.Instance>? seen_instances = for_uid(instance.uid);
-        if (seen_instances == null || seen_instances.size == 0)
-            return null;
-        
-        // for every instance matching its UID, look for the original
-        foreach (Component.Instance seen_instance in seen_instances) {
-            if (seen_instance.equal_to(instance))
-                return seen_instance;
-        }
-        
-        return null;
-    }
-    
     public override string to_string() {
         return "%s::%s".printf(calendar.to_string(), window.to_string());
     }

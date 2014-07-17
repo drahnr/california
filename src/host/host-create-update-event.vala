@@ -306,14 +306,37 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
     // TODO: Now that a clone is being used for editing, can directly bind controls properties to
     // Event's properties and update that way ... doesn't quite work when updating the master event,
     // however
-    private void update_component(Component.Event target, bool update_dtstart) {
+    private void update_component(Component.Event target, bool replace_dtstart) {
         target.calendar_source = calendar_model.active;
         target.summary = summary_entry.text;
         target.location = location_entry.text;
         target.description = description_textview.buffer.text;
         
-        if (!update_dtstart)
+        // if updating the master, don't replace the dtstart/dtend, but do want to adjust it from
+        // DATE to DATE-TIME or vice-versa
+        if (!replace_dtstart) {
+            if (target.is_all_day != all_day_toggle.active) {
+                if (all_day_toggle.active) {
+                    target.set_event_date_span(target.get_event_date_span(null));
+                } else {
+                    // use existing timezone unless not specified in original event
+                    Calendar.DateSpan target_date_span = target.get_event_date_span(null);
+                    Calendar.Timezone tz = (target.exact_time_span != null)
+                        ? target.exact_time_span.start_exact_time.tz
+                        : Calendar.Timezone.local;
+                    target.set_event_exact_time_span(
+                        new Calendar.ExactTimeSpan(
+                            new Calendar.ExactTime(tz, target_date_span.start_date,
+                                time_map.get(dtstart_time_combo.get_active_text())),
+                            new Calendar.ExactTime(tz, target_date_span.end_date,
+                                time_map.get(dtend_time_combo.get_active_text()))
+                        )
+                    );
+                }
+            }
+            
             return;
+        }
         
         if (all_day_toggle.active) {
             target.set_event_date_span(selected_date_span);
@@ -333,8 +356,8 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         }
     }
     
-    private void create_update_event(Component.Event target, bool update_dtstart) {
-        update_component(target, update_dtstart);
+    private void create_update_event(Component.Event target, bool replace_dtstart) {
+        update_component(target, replace_dtstart);
         
         if (is_update)
             update_event_async.begin(target, null);

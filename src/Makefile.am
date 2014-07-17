@@ -108,6 +108,7 @@ california_VALASOURCES = \
 	tests/tests-calendar-month-of-year.vala \
 	tests/tests-calendar-month-span.vala \
 	tests/tests-calendar-wall-time.vala \
+	tests/tests-iterable.vala \
 	tests/tests-quick-add.vala \
 	tests/tests-quick-add-recurring.vala \
 	tests/tests-string.vala \

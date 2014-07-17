@@ -19,7 +19,7 @@ namespace California.Backing {
 
 public abstract class CalendarSource : Source {
     /**
-     * The affected range of a modification or removal operation.
+     * The affected range of a removal operation.
      *
      * Note that zero (0) does ''not'' mean "none", it means {@link AffectedInstances.THIS}.  The
      * additional enums merely expand the scope of the default, which is the supplied instance.
@@ -63,6 +63,10 @@ public abstract class CalendarSource : Source {
     
     /**
      * Updates an existing {@link Component} instance on the backing {@link CalendarSource}.
+     *
+     * To update all {@link Instance}s of a recurring {@link Instance}, submit the
+     * {@link Component.Instance.master} with modifications rather than one of its generated
+     * instances.  Submit a generated instance to update only that one.
      *
      * Outstanding {@link CalendarSourceSubscriptions} will eventually report the changes when
      * ready.

@@ -152,7 +152,10 @@ internal class EdsCalendarSource : CalendarSource {
         Cancellable? cancellable = null) throws Error {
         check_open();
         
-        yield client.modify_object(instance.ical_component, E.CalObjModType.THIS, cancellable);
+        E.CalObjModType modtype =
+            instance.can_generate_instances ? E.CalObjModType.ALL : E.CalObjModType.THIS;
+        
+        yield client.modify_object(instance.ical_component, modtype, cancellable);
     }
     
     public override async void remove_all_instances_async(Component.UID uid,
@@ -171,7 +174,7 @@ internal class EdsCalendarSource : CalendarSource {
         // include an EXDATE in the original iCal source ... I don't quite understand the benefit of
         // this, as this suggests (a) other calendar clients won't learn of the removal and (b) the
         // instance will be re-generated the next time the user runs an EDS calendar client.  In
-        // either case, ONLY maps to our desired effect by adding an EXDATE to the iCal source.
+        // either case, THIS maps to our desired effect by adding an EXDATE to the iCal source.
         switch (affected) {
             case CalendarSource.AffectedInstances.THIS:
                 yield client.remove_object(uid.value, rid.value, E.CalObjModType.THIS, cancellable);

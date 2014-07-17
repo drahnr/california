@@ -35,6 +35,8 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
     public const string PROP_ICAL_COMPONENT = "ical-component";
     public const string PROP_RRULE = "rrule";
     public const string PROP_RID = "rid";
+    public const string PROP_EXDATES = "exdates";
+    public const string PROP_RDATES = "rdates";
     public const string PROP_SEQUENCE = "sequence";
     public const string PROP_MASTER = "master";
     
@@ -81,6 +83,40 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
      * See [[https://tools.ietf.org/html/rfc5545#section-3.8.4.4]]
      */
     public Component.DateTime? rid { get; set; default = null; }
+    
+    /**
+     * All EXDATEs (DATE-TIME exceptions for recurring instances) in the {@link Instance}.
+     *
+     * Returns a read-only set of {@link DateTime}s.  Use {@link set_exdates} to change.
+     *
+     * See [[https://tools.ietf.org/html/rfc5545#section-3.8.5.1]]
+     */
+    private Gee.SortedSet<DateTime>? _exdates = null;
+    public Gee.SortedSet<DateTime>? exdates {
+        owned get {
+            return Collection.is_empty(_exdates) ? null : _exdates.read_only_view;
+        }
+        
+        set {
+            _exdates = value;
+        }
+    }
+    
+    /**
+     * All RDATEs (DATE-TIMEs manually set for recurring instances) in the {@link Instance}.
+     *
+     * See [[https://tools.ietf.org/html/rfc5545#section-3.8.5.2]]
+     */
+    private Gee.SortedSet<DateTime>? _rdates = null;
+    public Gee.SortedSet<DateTime>? rdates {
+        owned get {
+            return Collection.is_empty(_rdates) ? null : _rdates.read_only_view;
+        }
+        
+        set {
+            _rdates = value;
+        }
+    }
     
     /**
      * Returns true if the {@link Instance} is a master instance.
@@ -312,6 +348,9 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
                 debug("Unable to parse RRULE for %s: %s", to_string(), comperr.message);
         }
         
+        exdates = get_multiple_date_times(iCal.icalproperty_kind.EXDATE_PROPERTY);
+        rdates = get_multiple_date_times(iCal.icalproperty_kind.RDATE_PROPERTY);
+        
         // save own copy of component; no ownership transferrance w/ current bindings
         if (_ical_component != ical_component)
             _ical_component = ical_component.clone();
@@ -342,6 +381,20 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
                 // add new one, if added
                 if (rrule != null)
                     rrule.add_to_ical(ical_component);
+            break;
+            
+            case PROP_EXDATES:
+                if (Collection.is_empty(exdates))
+                    remove_all_properties(iCal.icalproperty_kind.EXDATE_PROPERTY);
+                else
+                    set_multiple_date_times(iCal.icalproperty_kind.EXDATE_PROPERTY, exdates);
+            break;
+            
+            case PROP_RDATES:
+                if (Collection.is_empty(rdates))
+                    remove_all_properties(iCal.icalproperty_kind.RDATE_PROPERTY);
+                else
+                    set_multiple_date_times(iCal.icalproperty_kind.RDATE_PROPERTY, rdates);
             break;
             
             default:
@@ -412,6 +465,46 @@ public abstract class Instance : BaseObject, Gee.Hashable<Instance> {
                     ical_component.isa().to_string());
                 
                 return null;
+        }
+    }
+    
+    /**
+     * Convenience method to convert a collection of DATE/DATE-TIME properties into a SortedSet of
+     * {@link DateTime}s.
+     *
+     * @see set_multiple_date_times
+     */
+    protected Gee.SortedSet<DateTime>? get_multiple_date_times(iCal.icalproperty_kind kind) {
+        Gee.SortedSet<DateTime> date_times = new Gee.TreeSet<DateTime>();
+        
+        unowned iCal.icalproperty? prop = ical_component.get_first_property(kind);
+        while (prop != null) {
+            try {
+                date_times.add(new DateTime.from_property(prop));
+            } catch (ComponentError comperr) {
+                debug("Unable to parse DATE/DATE-TIME for %s: %s", kind.to_string(), comperr.message);
+            }
+            
+            prop = ical_component.get_next_property(kind);
+        }
+        
+        return date_times.size > 0 ? date_times : null;
+    }
+    
+    /**
+     * Convenience method to set (replace) a collection of DATE/DATE-TIME properties from a
+     * Collection of {@link DateTime}s.
+     *
+     * @see get_multiple_date_times
+     */
+    protected void set_multiple_date_times(iCal.icalproperty_kind kind, Gee.Collection<DateTime> date_times) {
+        remove_all_properties(kind);
+        
+        foreach (DateTime date_time in date_times) {
+            iCal.icalproperty prop = new iCal.icalproperty(kind);
+            prop.set_value(date_time.to_ical_value());
+            
+            ical_component.add_property(prop);
         }
     }
     

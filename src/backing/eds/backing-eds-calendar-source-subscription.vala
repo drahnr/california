@@ -188,32 +188,56 @@ internal class EdsCalendarSourceSubscription : CalendarSourceSubscription {
             if (!has_uid(uid))
                 continue;
             
-            // find original for this one
-            Gee.Collection<Component.Instance>? instances = for_uid(uid);
-            if (instances == null || instances.size == 0)
-                continue;
-            
-            foreach (Component.Instance instance in instances) {
-                Component.Event? known_event = instance as Component.Event;
-                if (known_event == null)
-                    continue;
-                
-                try {
-                    known_event.full_update(ical_component, null);
-                } catch (Error err) {
-                    debug("Unable to update event %s: %s", known_event.to_string(), err.message);
+            Component.DateTime? rid = null;
+            try {
+                rid = new Component.DateTime(ical_component, iCal.icalproperty_kind.RECURRENCEID_PROPERTY);
+            } catch (ComponentError comperr) {
+                if (!(comperr is ComponentError.UNAVAILABLE)) {
+                    debug("Unable to get RID of modified component: %s", comperr.message);
                     
                     continue;
                 }
-                
-                notify_instance_altered(known_event);
             }
             
-            if (instances.size > 1)
-                debug("Warning: updated %d modified events, expecting only 1", instances.size);
+            // get all instances known for this UID to find original to alter
+            Gee.Collection<Component.Instance>? instances = for_uid(uid);
+            
+            // if no RID, then only one should be returned
+            Component.Instance? instance = null;
+            if (rid == null) {
+                instance = traverse<Component.Instance>(instances).one();
+                if (instance == null) {
+                    debug("%d instances found for modified instance, expected 1", Collection.size(instances));
+                    
+                    continue;
+                }
+            } else {
+                // if RID != null, then find the matching instance
+                instance = traverse<Component.Instance>(instances)
+                    .first_matching(inst => inst.rid != null && inst.rid.equal_to(rid));
+                if (instance == null) {
+                    debug("Cannot find instance with UID %s RID %s, skipping", uid.to_string(), rid.to_string());
+                    
+                    continue;
+                }
+            }
+            
+            Component.Event? modified_event = instance as Component.Event;
+            if (modified_event == null)
+                continue;
+            
+            try {
+                modified_event.full_update(ical_component, null);
+            } catch (Error err) {
+                debug("Unable to update event %s: %s", modified_event.to_string(), err.message);
+                
+                continue;
+            }
+            
+            notify_instance_altered(modified_event);
         }
         
-        // add any recurring events
+        // remove and re-add any recurring events
         on_objects_added(add_list);
     }
     

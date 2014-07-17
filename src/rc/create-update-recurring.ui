@@ -520,6 +520,28 @@
       </object>
       <packing>
         <property name="left_attach">0</property>
+        <property name="top_attach">3</property>
+        <property name="width">2</property>
+        <property name="height">1</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkLabel" id="warning_label">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="no_show_all">True</property>
+        <property name="margin_left">16</property>
+        <property name="margin_top">8</property>
+        <property name="xalign">0</property>
+        <property name="label" translatable="yes">WARNING: California cannot edit this event's recurring criteria.
+• Press Cancel to keep the current criteria.
+• Press OK to overwrite the existing criteria with your changes.</property>
+        <attributes>
+          <attribute name="weight" value="bold"/>
+        </attributes>
+      </object>
+      <packing>
+        <property name="left_attach">0</property>
         <property name="top_attach">2</property>
         <property name="width">2</property>
         <property name="height">1</property>

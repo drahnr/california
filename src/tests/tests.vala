@@ -12,6 +12,7 @@ public int run(string[] args) {
         LogLevelFlags.LEVEL_WARNING | LogLevelFlags.LEVEL_ERROR | LogLevelFlags.LEVEL_CRITICAL);
     
     UnitTest.Harness.register(new String());
+    UnitTest.Harness.register(new Iterable());
     UnitTest.Harness.register(new CalendarDate());
     UnitTest.Harness.register(new CalendarMonthSpan());
     UnitTest.Harness.register(new CalendarMonthOfYear());

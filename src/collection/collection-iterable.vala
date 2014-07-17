@@ -191,6 +191,19 @@ public class Iterable<G> : Object {
             .map<A>(g => { return (A) g; }));
     }
     
+    /**
+     * Returns the first element in the {@link Iterable} if and only if it is the only one,
+     * otherwise returns null.
+     */
+    public G? one() {
+        if (!i.next())
+            return null;
+        
+        G element = i.@get();
+        
+        return !i.next() ? element : null;
+    }
+    
     public G? first() {
         return (i.next() ? i.@get() : null);
     }

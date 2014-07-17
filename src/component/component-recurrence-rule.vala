@@ -24,7 +24,7 @@ public class RecurrenceRule : BaseObject {
      * Enumeration of various BY rules (BYSECOND, BYMINUTE, etc.)
      */
     public enum ByRule {
-        SECOND,
+        SECOND = 0,
         MINUTE,
         HOUR,
         DAY,
@@ -32,7 +32,11 @@ public class RecurrenceRule : BaseObject {
         YEAR_DAY,
         WEEK_NUM,
         MONTH,
-        SET_POS
+        SET_POS,
+        /**
+         * The number of {@link ByRule}s, this is not a valid value.
+         */
+        COUNT;
     }
     
     /**
@@ -338,6 +342,8 @@ public class RecurrenceRule : BaseObject {
                 dow = Calendar.DayOfWeek.for(dow_value, Calendar.FirstOfWeek.SUNDAY);
             } catch (CalendarError calerr) {
                 debug("Unable to decode day of week value %d: %s", dow_value, calerr.message);
+                
+                return false;
             }
         }
         
@@ -484,6 +490,21 @@ public class RecurrenceRule : BaseObject {
             by_set.add_all(traverse<int>(values).filter(is_int_short).to_array_list());
         
         by_rule_updated(by_rule);
+    }
+    
+    /**
+     * Returns a Gee.Set of {@link ByRule}s that are active, i.e. have defined rules.
+     */
+    public Gee.Set<ByRule> get_active_by_rules() {
+        Gee.Set<ByRule> active = new Gee.HashSet<ByRule>();
+        for (int ctr = 0; ctr < ByRule.COUNT; ctr++) {
+            ByRule by_rule = (ByRule) ctr;
+            
+            if (get_by_set(by_rule).size > 0)
+                active.add(by_rule);
+        }
+        
+        return active;
     }
     
     /**

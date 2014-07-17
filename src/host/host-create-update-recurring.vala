@@ -95,6 +95,9 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
     private Gtk.RadioButton ends_on_radiobutton;
     
     [GtkChild]
+    private Gtk.Label warning_label;
+    
+    [GtkChild]
     private Gtk.Button end_date_button;
     
     [GtkChild]
@@ -221,18 +224,7 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
         event = (Component.Event) message;
         master = event.is_master_instance ? event : (Component.Event) event.master;
         
-        // need to use the master component in order to update the master RRULE
-        if (!can_update_recurring(event)) {
-            jump_back();
-            
-            return;
-        }
-        
         update_controls();
-    }
-    
-    public static bool can_update_recurring(Component.Event event) {
-        return event.is_master_instance || (event.master is Component.Event);
     }
     
     private void update_controls() {
@@ -257,45 +249,37 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
             repeats_combobox.active = Repeats.DAILY;
             every_entry.text = "1";
             never_radiobutton.active = true;
+            warning_label.visible = false;
             
             return;
         }
         
         // "Repeats" combobox
         switch (master.rrule.freq) {
-            case iCal.icalrecurrencetype_frequency.DAILY_RECURRENCE:
-                repeats_combobox.active = Repeats.DAILY;
-            break;
-            
-            // TODO: Don't allow for editing weekly rules with anything but BYDAY or BYDAY where
-            // the position value is non-zero
             case iCal.icalrecurrencetype_frequency.WEEKLY_RECURRENCE:
                 repeats_combobox.active = Repeats.WEEKLY;
             break;
             
-            // TODO: Don't support MONTHLY RRULEs with multiple ByRules or ByRules we can't
-            // represent ... basically, non-simple repeating rules
-            // TODO: BYDAY should be the exact month-day of week for the DTSTART, MONTH_DAY should
-            // be the month-day of the month for the DTSTART
             case iCal.icalrecurrencetype_frequency.MONTHLY_RECURRENCE:
                 bool by_day = master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY).size > 0;
                 bool by_monthday = master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.MONTH_DAY).size > 0;
                 
-                if (by_day && !by_monthday)
-                    repeats_combobox.active = Repeats.DAY_OF_THE_WEEK;
-                else if (!by_day && by_monthday)
+                // fall back on month day of the week
+                if (!by_day && by_monthday)
                     repeats_combobox.active = Repeats.DAY_OF_THE_MONTH;
                 else
-                    assert_not_reached();
+                    repeats_combobox.active = Repeats.DAY_OF_THE_WEEK;
             break;
             
             case iCal.icalrecurrencetype_frequency.YEARLY_RECURRENCE:
                 repeats_combobox.active = Repeats.YEARLY;
             break;
             
-            // TODO: Don't support sub-day RRULEs
+            // Fall back on Daily for default, warning label is shown if anything not supported
+            case iCal.icalrecurrencetype_frequency.DAILY_RECURRENCE:
             default:
-                assert_not_reached();
+                repeats_combobox.active = Repeats.DAILY;
+            break;
         }
         
         // "Every" entry
@@ -328,6 +312,69 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
             ends_on_radiobutton.active = true;
             end_date = master.rrule.get_recurrence_end_date();
         }
+        
+        // look for RRULEs that our editor cannot deal with
+        string? supported = is_supported_rrule();
+        if (supported != null)
+            debug("Unsupported RRULE: %s", supported);
+        
+        warning_label.visible = supported != null;
+    }
+    
+    // Returns a logging string for why not reported, null if supported
+    private string? is_supported_rrule() {
+        // only some frequencies support, and in some of those, certain requirements
+        switch (master.rrule.freq) {
+            case iCal.icalrecurrencetype_frequency.DAILY_RECURRENCE:
+            case iCal.icalrecurrencetype_frequency.YEARLY_RECURRENCE:
+                // do nothing, continue
+            break;
+            
+            case iCal.icalrecurrencetype_frequency.WEEKLY_RECURRENCE:
+                // can only hold BYDAY rules and all BYDAY rules must be zero
+                Gee.Set<Component.RecurrenceRule.ByRule> active = master.rrule.get_active_by_rules();
+                if (!active.contains(Component.RecurrenceRule.ByRule.DAY))
+                    return "weekly-not-byday";
+                
+                if (active.size > 1)
+                    return "weekly-multiple-byrules";
+                
+                foreach (int day in master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY)) {
+                    int position;
+                    if (!Component.RecurrenceRule.decode_day(day, null, out position))
+                        return "weekly-undecodeable-byday";
+                    
+                    if (position != 0)
+                        return "weekly-nonzero-byday-position";
+                }
+            break;
+            
+            // Must be a "simple" monthly recurrence
+            case iCal.icalrecurrencetype_frequency.MONTHLY_RECURRENCE:
+                bool by_day = master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.DAY).size > 0;
+                bool by_monthday = master.rrule.get_by_rule(Component.RecurrenceRule.ByRule.MONTH_DAY).size > 0;
+                
+                // can support one and only one
+                if (by_day == by_monthday)
+                    return "monthly-byday-and-bymonthday";
+                
+                if (master.rrule.get_active_by_rules().size > 1)
+                    return "monthly-multiple-byrules";
+            break;
+            
+            default:
+                return "unsupported-frequency";
+        }
+        
+        // do not support editing w/ EXDATEs
+        if (!Collection.is_empty(master.exdates))
+            return "exdates";
+        
+        // do not support editing w/ RDATEs
+        if (!Collection.is_empty(master.rdates))
+            return "rdates";
+        
+        return null;
     }
     
     [GtkCallback]
@@ -525,6 +572,10 @@ public class CreateUpdateRecurring : Gtk.Grid, Toolkit.Card {
                 rrule.set_by_rule(Component.RecurrenceRule.ByRule.MONTH_DAY, by_month_day);
             }
         }
+        
+        // remove EXDATEs and RDATEs, those are not currently supported
+        master.exdates = null;
+        master.rdates = null;
         
         master.make_recurring(rrule);
     }

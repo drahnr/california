@@ -18,5 +18,19 @@ public void terminate() {
         return;
 }
 
+/**
+ * Returns true if the Collection is null or empty (zero elements).
+ */
+public inline bool is_empty(Gee.Collection? c) {
+    return c == null || c.size == 0;
+}
+
+/**
+ * Returns the size of the Collection, zero if null.
+ */
+public inline int size(Gee.Collection? c) {
+    return !is_empty(c) ? c.size : 0;
+}
+
 }
 
