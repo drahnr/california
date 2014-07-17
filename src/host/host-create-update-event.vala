@@ -317,20 +317,12 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         if (!replace_dtstart) {
             if (target.is_all_day != all_day_toggle.active) {
                 if (all_day_toggle.active) {
-                    target.set_event_date_span(target.get_event_date_span(null));
+                    target.timed_to_all_day_event();
                 } else {
-                    // use existing timezone unless not specified in original event
-                    Calendar.DateSpan target_date_span = target.get_event_date_span(null);
-                    Calendar.Timezone tz = (target.exact_time_span != null)
-                        ? target.exact_time_span.start_exact_time.tz
-                        : Calendar.Timezone.local;
-                    target.set_event_exact_time_span(
-                        new Calendar.ExactTimeSpan(
-                            new Calendar.ExactTime(tz, target_date_span.start_date,
-                                time_map.get(dtstart_time_combo.get_active_text())),
-                            new Calendar.ExactTime(tz, target_date_span.end_date,
-                                time_map.get(dtend_time_combo.get_active_text()))
-                        )
+                    target.all_day_to_timed_event(
+                        time_map.get(dtstart_time_combo.get_active_text()),
+                        time_map.get(dtend_time_combo.get_active_text()),
+                        Calendar.Timezone.local
                     );
                 }
             }

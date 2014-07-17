@@ -11,6 +11,7 @@ src/calendar/calendar-date.vala
 src/calendar/calendar.vala
 src/component/component.vala
 src/host/host-create-update-event.vala
+src/host/host-create-update-recurring.vala
 src/host/host-import-calendar.vala
 src/host/host-main-window.vala
 src/host/host-show-event.vala
@@ -22,6 +23,7 @@ src/view/week/week-controller.vala
 [type: gettext/glade]src/rc/calendar-manager-list-item.ui
 [type: gettext/glade]src/rc/calendar-manager-list.ui
 [type: gettext/glade]src/rc/create-update-event.ui
+[type: gettext/glade]src/rc/create-update-recurring.ui
 [type: gettext/glade]src/rc/google-authenticating.ui
 [type: gettext/glade]src/rc/google-calendar-list.ui
 [type: gettext/glade]src/rc/google-login.ui

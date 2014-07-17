@@ -79,10 +79,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     }
     
     private void build_display() {
-        debug("VEVENT:\n%s\n", event.source);
-        if (event.master != null)
-            debug("VEVENT MASTER:\n%s\n", event.master.source);
-        
         // summary
         set_label(null, summary_text, event.summary);
         

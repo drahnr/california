@@ -316,6 +316,35 @@ public class Event : Instance, Gee.Comparable<Event> {
     }
     
     /**
+     * Convert an {@link Event} from an all-day to a timed event by only adding the time.
+     *
+     * Returns with no changes if {@link is_all_day} is false.
+     */
+    public void all_day_to_timed_event(Calendar.WallTime start_time, Calendar.WallTime end_time,
+        Calendar.Timezone timezone) {
+        if (!is_all_day)
+            return;
+        
+        // create exact time span using these parameters
+        set_event_exact_time_span(
+            new Calendar.ExactTimeSpan(
+                new Calendar.ExactTime(timezone, date_span.start_date, start_time),
+                new Calendar.ExactTime(timezone, date_span.end_date, end_time)
+            )
+        );
+    }
+    
+    /**
+     * Convert an {@link Event} from a timed event to an all-day event by removing the time.
+     *
+     * Returns with no changes if {@link is_all_day} is true.
+     */
+    public void timed_to_all_day_event() {
+        if (!is_all_day)
+            set_event_date_span(get_event_date_span(null));
+    }
+    
+    /**
      * Returns a prettified string describing the {@link Event}'s time span in as concise and
      * economical manner possible.
      *
