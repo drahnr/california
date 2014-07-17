@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: california\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-07-07 20:14+0200\n"
-"PO-Revision-Date: 2014-07-07 20:15+0200\n"
+"POT-Creation-Date: 2014-07-11 14:31+0200\n"
+"PO-Revision-Date: 2014-07-11 14:32+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
 "Language: pl\n"
@@ -22,6 +22,56 @@ msgstr ""
 "|| n%100>=20) ? 1 : 2);\n"
 "X-Poedit-Language: Polish\n"
 "X-Poedit-Country: Poland\n"
+
+#: ../data/california.appdata.xml.in.h:1
+msgid "GNOME 3 calendar"
+msgstr "Kalendarz dla środowiska GNOME 3"
+
+#: ../data/california.appdata.xml.in.h:2
+msgid ""
+"California is a new calendar application for GNOME 3 designed to let you "
+"work with your calendars quickly and easily. It provides month and week "
+"views of your schedule and easy ways to add and update events, including a "
+"Quick Add feature which allows you to type the event details and have them "
+"added to your calendar without filling out a form."
+msgstr ""
+"California to nowy kalendarz dla środowiska GNOME 3 zaprojektowany do "
+"szybkiej i łatwej pracy z kalendarzami. Dostarcza on widoki miesiąca oraz "
+"tygodnia i proste sposoby na aktualizowanie wydarzeń, w tym funkcję "
+"szybkiego dodawania, która umożliwia wpisywanie informacji o wydarzeniu i "
+"dodawanie go do kalendarza bez wypełniania żadnych formularzy."
+
+#: ../data/california.appdata.xml.in.h:3
+msgid ""
+"California is currently in beta development and has a limited but growing "
+"set of features:"
+msgstr ""
+"Program California jest obecnie w fazie beta i posiada ograniczony, ale "
+"rosnący zestaw funkcji:"
+
+#: ../data/california.appdata.xml.in.h:4
+msgid "Modern, clean interface"
+msgstr "Nowoczesny, prosty interfejs"
+
+#: ../data/california.appdata.xml.in.h:5
+msgid "Month and week view of your schedule"
+msgstr "Widok miesiąca i tygodnia"
+
+#: ../data/california.appdata.xml.in.h:6
+msgid "Quick setup (if any is required at all)"
+msgstr "Szybkie ustawianie (jeśli w ogóle jakieś jest potrzebne)"
+
+#: ../data/california.appdata.xml.in.h:7
+msgid "Integrates with Evolution Data Server"
+msgstr "Integracja z serwerem danych programu Evolution"
+
+#: ../data/california.appdata.xml.in.h:8
+msgid "Quickly add events with a natural-language parser"
+msgstr "Szybkie dodawanie wydarzeń za pomocą analizatora języka naturalnego"
+
+#: ../data/california.appdata.xml.in.h:9
+msgid "Works with Google, WebCal, and CalDAV servers"
+msgstr "Działa z serwerami Google, WebCal, i CalDAV"
 
 #: ../data/california.desktop.in.in.h:1
 #: ../src/application/california-application.vala:18

@@ -159,12 +159,14 @@ public void init() throws Error {
     // A "pretty" date abbreviated and no year according to locale preferences, i.e. "Mon 3/10"
     // Leading zeroes will be stripped.
     // See http://www.cplusplus.com/reference/ctime/strftime/ for format reference
+    /* xgettext:no-c-format */
     FMT_PRETTY_DATE_COMPACT_NO_YEAR = _("%a %m/%d");
     
     // A "pretty" date abbreviated with no day of week or year according to locale preferences,
     // i.e. "3/10"
     // Leading zeroes will be stripped.
     // See http://www.cplusplus.com/reference/ctime/strftime/ for format reference
+    /* xgettext:no-c-format */
     FMT_PRETTY_DATE_COMPACT_NO_DOW_NO_YEAR = _("%m/%d");
     
     // Ante meridiem
