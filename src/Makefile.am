@@ -195,10 +195,6 @@ if ENABLE_UNITY
 california_OPTIONAL_VALAFLAGS += --define ENABLE_UNITY
 endif
 
-if IS_GTK_312
-california_OPTIONAL_VALAFLAGS += --define GTK_312
-endif
-
 california_VALAFLAGS = \
 	--fatal-warnings --debug --enable-checking --vapidir $(top_srcdir)/vapi --target-glib=2.38 \
 	--enable-deprecated \

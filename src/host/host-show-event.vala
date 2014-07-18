@@ -41,6 +41,9 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     private Gtk.Label where_text;
     
     [GtkChild]
+    private Gtk.ScrolledWindow description_text_window;
+    
+    [GtkChild]
     private Gtk.Label description_text;
     
     [GtkChild]
@@ -53,10 +56,10 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     private Gtk.Button close_button = new Gtk.Button.with_mnemonic(_("_Close"));
     private Gtk.Button update_button = new Gtk.Button.with_mnemonic(_("_Update"));
     private Gtk.Button remove_button = new Gtk.Button.with_mnemonic(_("_Remove"));
-    private Gtk.Button remove_all_button = new Gtk.Button.with_mnemonic(_("Remove A_ll Events"));
-    private Gtk.Button remove_this_button = new Gtk.Button.with_mnemonic(_("Remove _This Event"));
+    private Gtk.Button remove_all_button = new Gtk.Button.with_mnemonic(_("A_ll Events"));
+    private Gtk.Button remove_this_button = new Gtk.Button.with_mnemonic(_("_This Event"));
     private Gtk.Button remove_this_future_button = new Gtk.Button.with_mnemonic(
-        _("Remove This and _Future Events"));
+        _("This and _Future Events"));
     private Gtk.Button cancel_remove_button = new Gtk.Button.with_mnemonic(_("_Cancel"));
     
     public ShowEvent() {
@@ -103,6 +106,11 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         
         event = message as Component.Event;
         assert(event != null);
+        
+        description_text.bind_property("visible", description_text_window, "visible",
+            BindingFlags.SYNC_CREATE);
+        description_text.bind_property("no-show-all", description_text_window, "no-show-all",
+            BindingFlags.SYNC_CREATE);
         
         build_display();
     }
@@ -169,9 +177,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     private void on_remove_button_clicked() {
         // If recurring (and so this is a generated instance of the VEVENT, not the VEVENT itself),
         // reveal additional remove buttons
-        //
-        // TODO: Gtk.Stack would be a better widget for this animation, but it's unavailable in
-        // Glade as of GTK+ 3.12.
         if (event.is_generated_instance) {
             rotating_button_box.family = FAMILY_REMOVING;
             

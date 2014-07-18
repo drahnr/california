@@ -45,9 +45,6 @@ PKG_CHECK_MODULES(CALIFORNIA, [
 	gobject-introspection-1.0 >= $GOBJECT_INTROSPECTION_REQUIRED
 ])
 
-# Look for GTK+ 3.12 or better
-AM_CONDITIONAL(IS_GTK_312, pkg-config --exists 'gtk+-3.0 >= 3.12')
-
 AC_SUBST(CALIFORNIA_CFLAGS)
 AC_SUBST(CALIFORNIA_LIBS)
 

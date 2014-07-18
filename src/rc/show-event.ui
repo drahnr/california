@@ -5,6 +5,8 @@
   <template class="CaliforniaHostShowEvent" parent="GtkGrid">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="hexpand">True</property>
+    <property name="vexpand">True</property>
     <property name="row_spacing">6</property>
     <child>
       <object class="GtkLabel" id="summary_text">
@@ -27,7 +29,7 @@
       </packing>
     </child>
     <child>
-      <object class="GtkScrolledWindow" id="scrolledwindow1">
+      <object class="GtkScrolledWindow" id="description_text_window">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="margin_top">6</property>
@@ -154,6 +156,7 @@
       <object class="GtkBox" id="rotating_button_box_container">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="margin_top">8</property>
         <child>
           <placeholder/>
         </child>

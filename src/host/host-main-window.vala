@@ -187,7 +187,7 @@ public class MainWindow : Gtk.ApplicationWindow {
         view_switcher.get_style_context().add_class(Gtk.STYLE_CLASS_LINKED);
         view_switcher.get_style_context().add_class(Gtk.STYLE_CLASS_RAISED);
         
-        // pack left-side of window
+        // pack left-side of header bar
         headerbar.pack_start(today);
         headerbar.pack_start(nav_buttons);
         headerbar.pack_start(view_switcher);
@@ -219,17 +219,10 @@ public class MainWindow : Gtk.ApplicationWindow {
         size.add_widget(calendar_button);
         size.add_widget(window_menu);
         
-        // pack right-side of window ... note that this was fixed in 3.12, reversing the order of
-        // how widgets need to be packed at the end
-#if GTK_312
+        // pack right-side of header bar
         headerbar.pack_end(window_menu);
         headerbar.pack_end(calendar_button);
         headerbar.pack_end(quick_add_button);
-#else
-        headerbar.pack_end(quick_add_button);
-        headerbar.pack_end(calendars);
-        headerbar.pack_end(window_menu);
-#endif
         
         Gtk.Box layout = new Gtk.Box(Gtk.Orientation.VERTICAL, 0);
         // if on Unity, since headerbar is not the titlebar, need to pack it like any other widget
@@ -346,6 +339,7 @@ public class MainWindow : Gtk.ApplicationWindow {
         // when the dialog closes, reset View.Controllable state (selection is maintained while
         // use is viewing/editing interaction) and destroy widgets
         deck_window.dismiss.connect(() => {
+            debug("dismissed");
             current_controller.unselect_all();
             deck_window.hide();
             // give the dialog a change to hide before allowing other signals to fire, which may
