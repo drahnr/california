@@ -381,10 +381,10 @@ internal class Grid : Gtk.Box {
         DayPane day_pane = (DayPane) widget;
         
         Calendar.ExactTimeSpan? selection_span = day_pane.get_selection_span();
-        if (selection_span == null)
+        if (selection_span == null || day_pane.selection_point == null)
             return Toolkit.PROPAGATE;
         
-        owner.request_create_timed_event(selection_span, widget, point);
+        owner.request_create_timed_event(selection_span, widget, day_pane.selection_point);
         
         return Toolkit.STOP;
     }

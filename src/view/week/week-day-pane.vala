@@ -36,6 +36,11 @@ internal class DayPane : Pane, Common.InstanceContainer {
     public Calendar.WallTime? selection_end { get; private set; }
     
     /**
+     * The center point of the current selection.
+     */
+    public Gdk.Point? selection_point { get; private set; default = null; }
+    
+    /**
      * @inheritDoc
      */
     public int event_count { get { return days_events.size; } }
@@ -275,6 +280,12 @@ internal class DayPane : Pane, Common.InstanceContainer {
             ctx.rectangle(0, y, get_allocated_width(), height);
             Gdk.cairo_set_source_rgba(ctx, palette.selection);
             ctx.fill();
+            
+            selection_point = Gdk.Point();
+            selection_point.x = get_allocated_width() / 2;
+            selection_point.y = y + (height / 2);
+        } else {
+            selection_point = null;
         }
         
         return true;
