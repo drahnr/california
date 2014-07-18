@@ -7,6 +7,24 @@
 namespace California {
 
 /**
+ * Perform an asynchronous delay for the specified number of seconds.
+*/
+public async void sleep_sec_async(uint seconds) {
+    uint id = Timeout.add_seconds(seconds, sleep_sec_async.callback);
+    yield;
+    Source.remove(id);
+}
+
+/**
+ * Perform an asynchronous delay for the specified number of milliseconds.
+*/
+public async void sleep_msec_async(uint milliseconds) {
+    uint id = Timeout.add(milliseconds, sleep_msec_async.callback);
+    yield;
+    Source.remove(id);
+}
+
+/**
  * A reference-counted source ID to better control execution of Idle and Timeout callbacks in the
  * event loop.
  *

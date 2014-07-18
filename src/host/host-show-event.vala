@@ -14,6 +14,9 @@ namespace California.Host {
 public class ShowEvent : Gtk.Grid, Toolkit.Card {
     public const string ID = "ShowEvent";
     
+    private const string FAMILY_NORMAL = "normal";
+    private const string FAMILY_REMOVING = "removing";
+    
     public string card_id { get { return ID; } }
     
     public string? title { get { return null; } }
@@ -41,25 +44,51 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
     private Gtk.Label description_text;
     
     [GtkChild]
-    private Gtk.Button update_button;
-    
-    [GtkChild]
-    private Gtk.Button remove_button;
-    
-    [GtkChild]
-    private Gtk.Button close_button;
-    
-    [GtkChild]
-    private Gtk.Revealer button_box_revealer;
-    
-    [GtkChild]
-    private Gtk.Revealer remove_recurring_revealer;
+    private Gtk.Box rotating_button_box_container;
     
     private new Component.Event event;
+    
+    private Toolkit.RotatingButtonBox rotating_button_box = new Toolkit.RotatingButtonBox();
+    
+    private Gtk.Button close_button = new Gtk.Button.with_mnemonic(_("_Close"));
+    private Gtk.Button update_button = new Gtk.Button.with_mnemonic(_("_Update"));
+    private Gtk.Button remove_button = new Gtk.Button.with_mnemonic(_("_Remove"));
+    private Gtk.Button remove_all_button = new Gtk.Button.with_mnemonic(_("Remove A_ll Events"));
+    private Gtk.Button remove_this_button = new Gtk.Button.with_mnemonic(_("Remove _This Event"));
+    private Gtk.Button remove_this_future_button = new Gtk.Button.with_mnemonic(
+        _("Remove This and _Future Events"));
+    private Gtk.Button cancel_remove_button = new Gtk.Button.with_mnemonic(_("_Cancel"));
     
     public ShowEvent() {
         Calendar.System.instance.is_24hr_changed.connect(build_display);
         Calendar.System.instance.today_changed.connect(build_display);
+        
+        remove_button.get_style_context().add_class("destructive-action");
+        remove_this_button.get_style_context().add_class("destructive-action");
+        remove_this_future_button.get_style_context().add_class("destructive-action");
+        remove_all_button.get_style_context().add_class("destructive-action");
+        
+        close_button.clicked.connect(on_close_button_clicked);
+        update_button.clicked.connect(on_update_button_clicked);
+        remove_button.clicked.connect(on_remove_button_clicked);
+        remove_all_button.clicked.connect(on_remove_all_button_clicked);
+        remove_this_button.clicked.connect(on_remove_this_button_clicked);
+        remove_this_future_button.clicked.connect(on_remove_future_button_clicked);
+        cancel_remove_button.clicked.connect(on_cancel_remove_recurring_button_clicked);
+        
+        rotating_button_box.pack_end(FAMILY_NORMAL, remove_button);
+        rotating_button_box.pack_end(FAMILY_NORMAL, update_button);
+        rotating_button_box.pack_end(FAMILY_NORMAL, close_button);
+        
+        rotating_button_box.pack_end(FAMILY_REMOVING, remove_this_button);
+        rotating_button_box.pack_end(FAMILY_REMOVING, remove_this_future_button);
+        rotating_button_box.pack_end(FAMILY_REMOVING, remove_all_button);
+        rotating_button_box.pack_end(FAMILY_REMOVING, cancel_remove_button);
+        
+        rotating_button_box.expand = true;
+        rotating_button_box.halign = Gtk.Align.FILL;
+        rotating_button_box.valign = Gtk.Align.END;
+        rotating_button_box_container.add(rotating_button_box);
     }
     
     ~ShowEvent() {
@@ -137,7 +166,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         }
     }
     
-    [GtkCallback]
     private void on_remove_button_clicked() {
         // If recurring (and so this is a generated instance of the VEVENT, not the VEVENT itself),
         // reveal additional remove buttons
@@ -145,8 +173,7 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         // TODO: Gtk.Stack would be a better widget for this animation, but it's unavailable in
         // Glade as of GTK+ 3.12.
         if (event.is_generated_instance) {
-            button_box_revealer.reveal_child = false;
-            remove_recurring_revealer.reveal_child = true;
+            rotating_button_box.family = FAMILY_REMOVING;
             
             return;
         }
@@ -154,28 +181,22 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
     }
     
-    [GtkCallback]
     private void on_cancel_remove_recurring_button_clicked() {
-        button_box_revealer.reveal_child = true;
-        remove_recurring_revealer.reveal_child = false;
+        rotating_button_box.family = FAMILY_NORMAL;
     }
     
-    [GtkCallback]
     private void on_remove_this_button_clicked() {
         remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS);
     }
     
-    [GtkCallback]
     private void on_remove_future_button_clicked() {
         remove_events_async.begin(event.rid, Backing.CalendarSource.AffectedInstances.THIS_AND_FUTURE);
     }
     
-    [GtkCallback]
     private void on_remove_all_button_clicked() {
         remove_events_async.begin(null, Backing.CalendarSource.AffectedInstances.ALL);
     }
     
-    [GtkCallback]
     private void on_update_button_clicked() {
         // pass a clone of the existing event for editing
         try {
@@ -185,7 +206,6 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         }
     }
     
-    [GtkCallback]
     private void on_close_button_clicked() {
         notify_user_closed();
     }
