@@ -21,6 +21,11 @@ public class Window : Toolkit.DeckWindow {
     
     public static void display(Gtk.Widget relative_to, Gdk.Point? for_location) {
         Manager.Window instance = new Manager.Window(relative_to, for_location);
+        
+        instance.dismiss.connect(() => {
+            Toolkit.destroy_later(instance);
+        });
+        
         instance.show_all();
     }
     

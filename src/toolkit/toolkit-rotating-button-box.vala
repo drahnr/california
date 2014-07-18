@@ -33,14 +33,37 @@ public class RotatingButtonBox : Gtk.Stack {
     public string? family { get; set; }
     
     private Gee.HashMap<string, Gtk.ButtonBox> button_boxes = new Gee.HashMap<string, Gtk.ButtonBox>();
+    private Gtk.Popover? parent_popover = null;
+    private bool parent_popover_modal = false;
     
     public RotatingButtonBox() {
         homogeneous = true;
         transition_duration = SLOW_STACK_TRANSITION_DURATION_MSEC;
         transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
         
+        notify["transition-running"].connect(on_transition_running);
+        
         bind_property("visible-child-name", this, PROP_FAMILY,
             BindingFlags.SYNC_CREATE | BindingFlags.BIDIRECTIONAL);
+    }
+    
+    // unfortunately, RotatingButtonBox can cause modal Popovers to close because the focus
+    // changes from one button box to another, triggering a situation in GtkWidget where the
+    // Popover thinks it has lost focus ... this hacks around the problem by setting the popover
+    // to modeless until the transition is complete
+    private void on_transition_running() {
+        if (transition_running && parent_popover == null) {
+            // set to modeless to hack around problem
+            parent_popover = get_ancestor(typeof (Gtk.Popover)) as Gtk.Popover;
+            if (parent_popover != null) {
+                parent_popover_modal = parent_popover.modal;
+                parent_popover.modal = false;
+            }
+        } else if (!transition_running && parent_popover != null) {
+            // reset to original mode
+            parent_popover.modal = parent_popover_modal;
+            parent_popover = null;
+        }
     }
     
     /**

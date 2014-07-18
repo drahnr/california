@@ -22,7 +22,9 @@ public California.Iterable<G> traverse<G>(Gee.Iterable<G>? gee_iterable) {
  * it.
  *
  * "Safe iteration" means later operations that remove elements while iterating do not cause an
- * assertion.
+ * assertion.  This involves creating a copy of the supplied Gee.Iterable, meaning that any changes
+ * made in subsequence operations (i.e. {@link California.Iterable.filter} are not reflected in
+ * the passed-in collection.
  *
  * An empty Gee.Iterable is created and used if null is passed in.
  */

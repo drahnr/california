@@ -131,10 +131,10 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         bool read_only = event.calendar_source != null && event.calendar_source.read_only;
         
         update_button.visible = !read_only;
-        update_button.no_show_all = !read_only;
+        update_button.no_show_all = read_only;
         
         remove_button.visible = !read_only;
-        remove_button.no_show_all = !read_only;
+        remove_button.no_show_all = read_only;
     }
     
     private string? escape(string? plain) {

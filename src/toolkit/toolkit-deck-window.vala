@@ -7,26 +7,24 @@
 namespace California.Toolkit {
 
 /**
- * A GtkDialog with no visible action area.
- *
- * This is designed for UI panes that want to control their own interaction with the user (in
- * particular, button placement) but need all the benefits interaction-wise of GtkDialog.
- *
- * It's expected this will go away when we move to GTK+ 3.12 and can use GtkPopovers for these
- * interactions.
+ * A GtkPopover with special support for {@link Deck}s.
  */
 
 public class DeckWindow : Gtk.Popover {
     public Deck deck { get; private set; }
     
+    /**
+     * See {@link Card.dismiss}
+     */
     public signal void dismiss(bool user_request, bool final);
     
     public DeckWindow(Gtk.Widget rel_to, Gdk.Point? for_location, Deck? starter_deck) {
         Object (relative_to: rel_to);
         
-        // Toolkit.RotatingButtonBox requires DeckWindow not be modal because when rotating the
-        // buttons something occurs (probably a focus switch) that causes it to dismiss
-        modal = false;
+        // treat "closed" signal as dismissal by user request
+        closed.connect(() => {
+            dismiss(true, true);
+        });
         
         this.deck = starter_deck ?? new Deck();
         
@@ -48,14 +46,10 @@ public class DeckWindow : Gtk.Popover {
     
     ~DeckWindow() {
         deck.dismiss.disconnect(on_deck_dismissed);
-        debug("CTOR");
     }
     
     private void on_deck_dismissed(bool user_request, bool final) {
-        debug("deck dismissed");
         dismiss(user_request, final);
-        if (final)
-            destroy();
     }
 }
 

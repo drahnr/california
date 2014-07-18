@@ -33,19 +33,28 @@ public const bool STOP = true;
 public const bool PROPAGATE = false;
 
 private int init_count = 0;
+private Gee.Set<Gtk.Widget>? dead_pool = null;
+private Scheduled? dead_pool_gc = null;
 
 public void init() throws Error {
     if (!Unit.do_init(ref init_count))
         return;
     
+    dead_pool = new Gee.HashSet<Gtk.Widget>();
+    
     Calendar.init();
+    Collection.init();
 }
 
 public void terminate() {
     if (!Unit.do_terminate(ref init_count))
         return;
     
+    Collection.terminate();
     Calendar.terminate();
+    
+    dead_pool = null;
+    dead_pool_gc = null;
 }
 
 /**
@@ -92,6 +101,26 @@ public void set_unbusy(Gtk.Widget widget, Gdk.Cursor? unbusy_cursor) {
     }
     
     toplevel.get_window().set_cursor(unbusy_cursor);
+}
+
+/**
+ * Destroy a Gtk.Widget when the event loop is idle.
+ */
+public void destroy_later(Gtk.Widget widget) {
+    if (!dead_pool.add(widget))
+        return;
+    
+    // always reschedule
+    dead_pool_gc = new Scheduled.once_at_idle(() => {
+        // traverse_safely makes a copy of the dead_pool, so filter() won't work to remove destroyed
+        // elements, but that also means we can safely remove elements from it in the iterate()
+        // handler ... need to jump through these hoops because the widget.destroy() signal handlers
+        // may turn around and add more widgets to the dead pool during traversal
+        traverse_safely<Gtk.Widget>(dead_pool).iterate((widget) => {
+            widget.destroy();
+            dead_pool.remove(widget);
+        });
+    }, Priority.LOW);
 }
 
 }

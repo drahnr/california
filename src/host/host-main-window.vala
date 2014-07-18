@@ -339,12 +339,8 @@ public class MainWindow : Gtk.ApplicationWindow {
         // when the dialog closes, reset View.Controllable state (selection is maintained while
         // use is viewing/editing interaction) and destroy widgets
         deck_window.dismiss.connect(() => {
-            debug("dismissed");
             current_controller.unselect_all();
-            deck_window.hide();
-            // give the dialog a change to hide before allowing other signals to fire, which may
-            // invoke another dialog (prevents multiple dialogs on screen at same time)
-            Toolkit.spin_event_loop();
+            Toolkit.destroy_later(deck_window);
         });
         
         deck_window.deck.failure.connect((msg) => {
