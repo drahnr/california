@@ -41,6 +41,17 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
     private Toolkit.ComboBoxTextModel<Backing.CalendarSource> model;
     
     public QuickCreateEvent() {
+        // create and initialize combo box model
+        model = new Toolkit.ComboBoxTextModel<Backing.CalendarSource>(calendar_combo_box,
+            (cal) => cal.title);
+        foreach (Backing.CalendarSource calendar_source in
+            Backing.Manager.instance.get_sources_of_type<Backing.CalendarSource>()) {
+            if (calendar_source.visible && !calendar_source.read_only)
+                model.add(calendar_source);
+        }
+        
+        details_entry.secondary_icon_name = get_direction() == Gtk.TextDirection.RTL
+            ? "edit-clear-rtl-symbolic" : "edit-clear-symbolic";
     }
     
     public void jumped_to(Toolkit.Card? from, Toolkit.Card.Jump reason, Value? message) {
@@ -62,18 +73,6 @@ public class QuickCreateEvent : Gtk.Grid, Toolkit.Card {
         }
 
         example_label.label = "<small><i>%s</i></small>".printf(eg);
-        
-        // create and initialize combo box model
-        model = new Toolkit.ComboBoxTextModel<Backing.CalendarSource>(calendar_combo_box,
-            (cal) => cal.title);
-        foreach (Backing.CalendarSource calendar_source in
-            Backing.Manager.instance.get_sources_of_type<Backing.CalendarSource>()) {
-            if (calendar_source.visible && !calendar_source.read_only)
-                model.add(calendar_source);
-        }
-        
-        details_entry.secondary_icon_name = get_direction() == Gtk.TextDirection.RTL
-            ? "edit-clear-rtl-symbolic" : "edit-clear-symbolic";
         
         // make first item active
         calendar_combo_box.active = 0;

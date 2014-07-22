@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: california\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-07-11 14:31+0200\n"
-"PO-Revision-Date: 2014-07-11 14:32+0200\n"
+"POT-Creation-Date: 2014-07-20 16:45+0200\n"
+"PO-Revision-Date: 2014-07-20 16:48+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <gnomepl@aviary.pl>\n"
 "Language: pl\n"
@@ -95,6 +95,11 @@ msgstr "Kalendarz WWW (.ics)"
 msgid "Google Calendar"
 msgstr "Kalendarz Google"
 
+#: ../src/activator/google/activator-google-authenticating-pane.vala:89
+#: ../src/rc/google-authenticating.ui.h:3
+msgid "Authenticating…"
+msgstr "Uwierzytelnianie…"
+
 #: ../src/activator/google/activator-google-authenticating-pane.vala:97
 msgid "Unable to authenticate with Google Calendar service"
 msgstr "Nie można uwierzytelnić za pomocą usługi Kalendarza Google"
@@ -113,7 +118,7 @@ msgstr "Nie można uwierzytelnić: %s"
 msgid "Unable to retrieve calendar list: %s"
 msgstr "Nie można pobrać listy kalendarzy: %s"
 
-#: ../src/activator/google/activator-google-authenticating-pane.vala:134
+#: ../src/activator/google/activator-google-authenticating-pane.vala:131
 msgid "Authenticated"
 msgstr "Uwierzytelniono"
 
@@ -253,8 +258,8 @@ msgstr "%a, %x"
 #. A "pretty" date abbreviated and no year according to locale preferences, i.e. "Mon 3/10"
 #. Leading zeroes will be stripped.
 #. See http://www.cplusplus.com/reference/ctime/strftime/ for format reference
-#: ../src/calendar/calendar.vala:162
-#, c-format
+#: ../src/calendar/calendar.vala:163
+#, no-c-format
 msgid "%a %m/%d"
 msgstr "%a, %d.%m"
 
@@ -262,43 +267,43 @@ msgstr "%a, %d.%m"
 #. i.e. "3/10"
 #. Leading zeroes will be stripped.
 #. See http://www.cplusplus.com/reference/ctime/strftime/ for format reference
-#: ../src/calendar/calendar.vala:168
-#, c-format
+#: ../src/calendar/calendar.vala:170
+#, no-c-format
 msgid "%m/%d"
 msgstr "%d.%m"
 
 #. Ante meridiem
 #. (Please translate even if 24-hour clock used in your locale; this allows for GNOME time
 #. format user settings to be honored)
-#: ../src/calendar/calendar.vala:173
+#: ../src/calendar/calendar.vala:175
 msgid "am"
 msgstr "AM"
 
 #. Brief ante meridiem, i.e. "am" -> "a"
 #. (Please translate even if 24-hour clock used in your locale; this allows for GNOME time
 #. format user settings to be honored)
-#: ../src/calendar/calendar.vala:178
+#: ../src/calendar/calendar.vala:180
 msgid "a"
 msgstr "A"
 
 #. Post meridiem
 #. (Please translate even if 24-hour clock used in your locale; this allows for GNOME time
 #. format user settings to be honored)
-#: ../src/calendar/calendar.vala:183
+#: ../src/calendar/calendar.vala:185
 msgid "pm"
 msgstr "PM"
 
 #. Brief post meridiem, i.e. "pm" -> "p"
 #. (Please translate even if 24-hour clock used in your locale; this allows for GNOME time
 #. format user settings to be honored)
-#: ../src/calendar/calendar.vala:188
+#: ../src/calendar/calendar.vala:190
 msgid "p"
 msgstr "P"
 
 #. The 12-hour time with minute and meridiem ("am" or "pm"), i.e. "5:06pm"
 #. (Please translate even if 24-hour clock used in your locale; this allows for GNOME time
 #. format user settings to be honored)
-#: ../src/calendar/calendar.vala:193
+#: ../src/calendar/calendar.vala:195
 #, c-format
 msgid "%d:%02d%s"
 msgstr "%d∶%02d %s"
@@ -306,32 +311,32 @@ msgstr "%d∶%02d %s"
 #. The 12-hour time with minute, seconds, and meridiem ("am" or "pm"), i.e. "5:06:31pm"
 #. (Please translate even if 24-hour clock used in your locale; this allows for GNOME time
 #. format user settings to be honored)
-#: ../src/calendar/calendar.vala:198
+#: ../src/calendar/calendar.vala:200
 #, c-format
 msgid "%d:%02d:%02d%s"
 msgstr "%d∶%02d∶%02d %s"
 
 #. The 24-hour time with minutes, i.e. "17:06"
-#: ../src/calendar/calendar.vala:201
+#: ../src/calendar/calendar.vala:203
 #, c-format
 msgid "%02d:%02d"
 msgstr "%02d∶%02d"
 
 #. The 24-hour time with minutes and seconds, i.e. "17:06:31"
-#: ../src/calendar/calendar.vala:204
+#: ../src/calendar/calendar.vala:206
 #, c-format
 msgid "%02d:%02d:%02d"
 msgstr "%02d∶%02d∶%02d"
 
 #. Used by quick-add to indicate the user wants to create an event at midnight.
 #. For more information see https://wiki.gnome.org/Apps/California/TranslatingQuickAdd
-#: ../src/calendar/calendar.vala:214
+#: ../src/calendar/calendar.vala:216
 msgid "midnight"
 msgstr "północ"
 
 #. Used by quick-add to indicate the user wants to create an event at noon.
 #. For more information see https://wiki.gnome.org/Apps/California/TranslatingQuickAdd
-#: ../src/calendar/calendar.vala:218
+#: ../src/calendar/calendar.vala:220
 msgid "noon"
 msgstr "południe"
 
@@ -506,32 +511,86 @@ msgstr "w;na;"
 msgid "st;nd;rd;th"
 msgstr "st;nd;rd;th"
 
-#: ../src/host/host-create-update-event.vala:192 ../src/rc/show-event.ui.h:9
+#: ../src/host/host-create-update-event.vala:81
+#: ../src/host/host-create-update-event.vala:84
+#: ../src/host/host-show-event.vala:60 ../src/rc/calendar-import.ui.h:1
+#: ../src/rc/create-update-recurring.ui.h:24
+#: ../src/rc/google-authenticating.ui.h:1
+#: ../src/rc/google-calendar-list.ui.h:2 ../src/rc/google-login.ui.h:1
+#: ../src/rc/webcal-subscribe.ui.h:4
+msgid "_Cancel"
+msgstr "_Anuluj"
+
+#: ../src/host/host-create-update-event.vala:82
+msgid "Update A_ll Events"
+msgstr "Zaktua_lizuj wszystkie wydarzenia"
+
+#: ../src/host/host-create-update-event.vala:83
+msgid "Update _This Event"
+msgstr "Zaktualizuj _to wydarzenie"
+
+#: ../src/host/host-create-update-event.vala:237
+#: ../src/host/host-show-event.vala:54
 msgid "_Update"
 msgstr "Z_aktualizuj"
 
-#: ../src/host/host-create-update-event.vala:192
-#: ../src/rc/create-update-event.ui.h:10
+#: ../src/host/host-create-update-event.vala:237
 msgid "C_reate"
 msgstr "U_twórz"
 
-#: ../src/host/host-create-update-event.vala:273
+#: ../src/host/host-create-update-event.vala:374
 msgid "Unable to create event: calendar must be specified"
 msgstr "Nie można utworzyć wydarzenia: należy podać kalendarz"
 
-#: ../src/host/host-create-update-event.vala:292
+#: ../src/host/host-create-update-event.vala:393
 #, c-format
 msgid "Unable to create event: %s"
 msgstr "Nie można utworzyć wydarzenia: %s"
 
-#: ../src/host/host-create-update-event.vala:298
+#: ../src/host/host-create-update-event.vala:399
 msgid "Unable to update event: calendar must be specified"
 msgstr "Nie można zaktualizować wydarzenia: należy podać kalendarz"
 
-#: ../src/host/host-create-update-event.vala:317
+#: ../src/host/host-create-update-event.vala:418
+#: ../src/host/host-show-event.vala:205
 #, c-format
 msgid "Unable to update event: %s"
 msgstr "Nie można zaktualizować wydarzenia: %s"
+
+#: ../src/host/host-create-update-recurring.vala:398
+msgid "month"
+msgid_plural "months"
+msgstr[0] "miesiąc"
+msgstr[1] "miesiące"
+msgstr[2] "miesięcy"
+
+#: ../src/host/host-create-update-recurring.vala:402
+msgid "week"
+msgid_plural "weeks"
+msgstr[0] "tydzień"
+msgstr[1] "tygodnie"
+msgstr[2] "tygodni"
+
+#: ../src/host/host-create-update-recurring.vala:406
+msgid "year"
+msgid_plural "years"
+msgstr[0] "rok"
+msgstr[1] "lata"
+msgstr[2] "lat"
+
+#: ../src/host/host-create-update-recurring.vala:411
+msgid "day"
+msgid_plural "days"
+msgstr[0] "dzień"
+msgstr[1] "dni"
+msgstr[2] "dni"
+
+#: ../src/host/host-create-update-recurring.vala:423
+msgid "event"
+msgid_plural "events"
+msgstr[0] "wydarzenie"
+msgstr[1] "wydarzenia"
+msgstr[2] "wydarzeń"
 
 #: ../src/host/host-import-calendar.vala:33
 msgid "Select calendar to import event into:"
@@ -564,9 +623,30 @@ msgstr "Szybko tworzy nowe wydarzenie (Ctrl+N)"
 msgid "Calendars (Ctrl+L)"
 msgstr "Kalendarze (Ctrl+L)"
 
+#: ../src/host/host-show-event.vala:53 ../src/rc/activator-list.ui.h:1
+#: ../src/rc/calendar-manager-list.ui.h:1
+msgid "_Close"
+msgstr "Za_mknij"
+
+#: ../src/host/host-show-event.vala:55
+msgid "_Remove"
+msgstr "_Usuń"
+
+#: ../src/host/host-show-event.vala:56
+msgid "Remove A_ll Events"
+msgstr "_Usuń wszystkie wydarzenia"
+
+#: ../src/host/host-show-event.vala:57
+msgid "Remove _This Event"
+msgstr "Usuń _to wydarzenie"
+
+#: ../src/host/host-show-event.vala:59
+msgid "Remove This and _Future Events"
+msgstr "Usuń to i p_rzyszłe wydarzenia"
+
 #. No number is supplied because the number of events removed is indefinite in certain
 #. situations ... plural text should simply be for "more than one"
-#: ../src/host/host-show-event.vala:209
+#: ../src/host/host-show-event.vala:236
 #, c-format
 msgid "Unable to remove event: %s"
 msgid_plural "Unable to remove events: %s"
@@ -594,11 +674,6 @@ msgstr "Tydzień"
 msgid "%s to %s"
 msgstr "%s do %s"
 
-#: ../src/rc/activator-list.ui.h:1 ../src/rc/calendar-manager-list.ui.h:1
-#: ../src/rc/show-event.ui.h:10
-msgid "_Close"
-msgstr "Za_mknij"
-
 #: ../src/rc/activator-list.ui.h:2
 msgid "_Add"
 msgstr "_Dodaj"
@@ -618,13 +693,6 @@ msgstr "_O programie"
 #: ../src/rc/app-menu.interface.h:4
 msgid "_Quit"
 msgstr "Za_kończ"
-
-#: ../src/rc/calendar-import.ui.h:1 ../src/rc/create-update-event.ui.h:9
-#: ../src/rc/google-authenticating.ui.h:1
-#: ../src/rc/google-calendar-list.ui.h:2 ../src/rc/google-login.ui.h:1
-#: ../src/rc/show-event.ui.h:7 ../src/rc/webcal-subscribe.ui.h:4
-msgid "_Cancel"
-msgstr "_Anuluj"
 
 #: ../src/rc/calendar-import.ui.h:2
 msgid "_Import"
@@ -653,20 +721,122 @@ msgid "_All-day"
 msgstr "_Cały dzień"
 
 #: ../src/rc/create-update-event.ui.h:7
+msgid "Re_peats..."
+msgstr "_Powtarzanie..."
+
+#: ../src/rc/create-update-event.ui.h:8
 msgid "_Location"
 msgstr "_Położenie"
 
-#: ../src/rc/create-update-event.ui.h:8
+#: ../src/rc/create-update-event.ui.h:9
 msgid "_Description"
 msgstr "_Opis"
+
+#: ../src/rc/create-update-recurring.ui.h:1
+msgid "_Repeating event"
+msgstr "Powta_rzające się wydarzenie"
+
+#: ../src/rc/create-update-recurring.ui.h:2
+msgid "Re_peats"
+msgstr "_Powtarzanie"
+
+#: ../src/rc/create-update-recurring.ui.h:3
+msgid "_Every"
+msgstr "_Co"
+
+#: ../src/rc/create-update-recurring.ui.h:4
+msgid "En_ds"
+msgstr "_Koniec"
+
+#: ../src/rc/create-update-recurring.ui.h:5
+msgid "_Starts"
+msgstr "P_oczątek"
+
+#: ../src/rc/create-update-recurring.ui.h:6
+msgid "_On days"
+msgstr "W _dniach"
+
+#: ../src/rc/create-update-recurring.ui.h:7
+msgid "Daily"
+msgstr "Codziennie"
+
+#: ../src/rc/create-update-recurring.ui.h:8
+msgid "Weekly"
+msgstr "Co tydzień"
+
+#: ../src/rc/create-update-recurring.ui.h:9
+msgid "Day of the week"
+msgstr "Dzień tygodnia"
+
+#: ../src/rc/create-update-recurring.ui.h:10
+msgid "Day of the month"
+msgstr "Dzień miesiąca"
+
+#: ../src/rc/create-update-recurring.ui.h:11
+msgid "Yearly"
+msgstr "Co roku"
+
+#: ../src/rc/create-update-recurring.ui.h:12
+msgid "_Sun"
+msgstr "_Nie"
+
+#: ../src/rc/create-update-recurring.ui.h:13
+msgid "_Mon"
+msgstr "_Pon"
+
+#: ../src/rc/create-update-recurring.ui.h:14
+msgid "_Tues"
+msgstr "_Wto"
+
+#: ../src/rc/create-update-recurring.ui.h:15
+msgid "_Wed"
+msgstr "Śr_o"
+
+#: ../src/rc/create-update-recurring.ui.h:16
+msgid "T_hu"
+msgstr "_Czw"
+
+#: ../src/rc/create-update-recurring.ui.h:17
+msgid "_Fri"
+msgstr "P_ią"
+
+#: ../src/rc/create-update-recurring.ui.h:18
+msgid "S_at"
+msgstr "_Sob"
+
+#: ../src/rc/create-update-recurring.ui.h:19
+msgid "_Never"
+msgstr "_Nigdy"
+
+#. As in, an event "ends on" a date
+#: ../src/rc/create-update-recurring.ui.h:21
+msgid "_On"
+msgstr "_W"
+
+#. As in, "After n events"
+#: ../src/rc/create-update-recurring.ui.h:23
+msgid "Aft_er"
+msgstr "_Po"
+
+#: ../src/rc/create-update-recurring.ui.h:25
+msgid "_OK"
+msgstr "_OK"
+
+#: ../src/rc/create-update-recurring.ui.h:26
+msgid ""
+"WARNING: California cannot edit this event's recurring criteria.\n"
+"• Press Cancel to keep the current criteria.\n"
+"• Press OK to overwrite the existing criteria with your changes."
+msgstr ""
+"OSTRZEŻENIE: program California nie może modyfikować kryteriów powtarzania "
+"tego wydarzenia.\n"
+"• Naciśnięcie przycisku Anuluj zostawi obecne kryteria.\n"
+"• Naciśnięcie przycisku OK zastąpi istniejące kryteria wprowadzonymi "
+"zmianami."
 
 #: ../src/rc/google-authenticating.ui.h:2
 msgid "_Try again"
 msgstr "_Spróbuj ponownie"
-
-#: ../src/rc/google-authenticating.ui.h:3
-msgid "Authenticating…"
-msgstr "Uwierzytelnianie…"
 
 #: ../src/rc/google-calendar-list.ui.h:1
 msgid "My calendars:"
@@ -711,26 +881,6 @@ msgstr "Kiedy"
 #: ../src/rc/show-event.ui.h:2
 msgid "Where"
 msgstr "Gdzie"
-
-#: ../src/rc/show-event.ui.h:3
-msgid "Remove in this series:"
-msgstr "Usunięcie w tej serii:"
-
-#: ../src/rc/show-event.ui.h:4
-msgid "_This Event"
-msgstr "_To wydarzenie"
-
-#: ../src/rc/show-event.ui.h:5
-msgid "This and _Future Events"
-msgstr "To i p_rzyszłe wydarzenia"
-
-#: ../src/rc/show-event.ui.h:6
-msgid "_All Events"
-msgstr "_Wszystkie wydarzenia"
-
-#: ../src/rc/show-event.ui.h:8
-msgid "_Remove"
-msgstr "_Usuń"
 
 #: ../src/rc/webcal-subscribe.ui.h:1
 msgid "_Name:"
