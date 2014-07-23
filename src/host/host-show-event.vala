@@ -66,6 +66,9 @@ public class ShowEvent : Gtk.Grid, Toolkit.Card {
         Calendar.System.instance.is_24hr_changed.connect(build_display);
         Calendar.System.instance.today_changed.connect(build_display);
         
+        close_button.can_default = true;
+        close_button.has_default = true;
+        
         remove_button.get_style_context().add_class("destructive-action");
         remove_this_button.get_style_context().add_class("destructive-action");
         remove_this_future_button.get_style_context().add_class("destructive-action");

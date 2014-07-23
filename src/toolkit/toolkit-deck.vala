@@ -44,6 +44,16 @@ public class Deck : Gtk.Stack {
     private Gee.HashMap<string, Card> names = new Gee.HashMap<string, Card>();
     
     /**
+     * Fired before {@link Card}s are added or removed.
+     */
+    public signal void adding_removing_cards(Gee.List<Card>? adding, Gee.Collection<Card>? removing);
+    
+    /**
+     * Fired after {@link Card}s are added or removed.
+     */
+    public signal void added_removed_cards(Gee.List<Card>? added, Gee.Collection<Card>? removed);
+    
+    /**
      * @see Card.dismiss
      */
     public signal void dismiss(bool user_request, bool final);
@@ -124,6 +134,8 @@ public class Deck : Gtk.Stack {
         if (cards.size == 0)
             return;
         
+        adding_removing_cards(cards, null);
+        
         // if empty, first card is home and should be made visible when added
         bool set_home_visible = size == 0;
         
@@ -153,6 +165,8 @@ public class Deck : Gtk.Stack {
             set_visible_child(home);
             home.jumped_to(null, Card.Jump.HOME, null);
         }
+        
+        added_removed_cards(cards, null);
     }
     
     /**
@@ -161,8 +175,10 @@ public class Deck : Gtk.Stack {
      * If the {@link top} card is removed, the Deck will return {@link home}, clearing the
      * navigation stack in the process.
      */
-    public void remove_cards(Gee.Iterable<Card> cards) {
+    public void remove_cards(Gee.Collection<Card> cards) {
         bool displaying = top != null;
+        
+        adding_removing_cards(null, cards);
         
         foreach (Card card in cards) {
             if (!names.has_key(card.card_id)) {
@@ -189,6 +205,8 @@ public class Deck : Gtk.Stack {
             set_visible_child(home);
             home.jumped_to(null, Card.Jump.HOME, null);
         }
+        
+        added_removed_cards(null, cards);
     }
     
     private Value? strip_null_value(Value? message) {
@@ -288,11 +306,12 @@ public class Deck : Gtk.Stack {
     private void on_card_mapped(Gtk.Widget widget) {
         Card card = (Card) widget;
         
-        if (card.default_widget != null && card.default_widget.can_default)
-            card.default_widget.grab_default();
-        
-        if (card.initial_focus != null && card.initial_focus.can_focus)
-            card.initial_focus.grab_focus();
+        if (card.default_widget != null) {
+            if (card.default_widget.can_default)
+                card.default_widget.grab_default();
+            else
+                message("Card %s specifies default widget that cannot be default", card.card_id);
+        }
     }
 }
 

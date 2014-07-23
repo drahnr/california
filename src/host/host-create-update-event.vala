@@ -115,6 +115,8 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
             calendar_model.add(calendar_source);
         }
         
+        accept_button.can_default = true;
+        accept_button.has_default = true;
         accept_button.get_style_context().add_class("suggested-action");
         
         accept_button.clicked.connect(on_accept_button_clicked);

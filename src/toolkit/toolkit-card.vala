@@ -66,6 +66,9 @@ public interface Card : Gtk.Widget {
      * set to true, it will get the default as well.
      *
      * The widget must have can-focus set to true.
+     *
+     * TODO: This is no longer necessary with Toolkit.DeckWindow using Gtk.Popover.  This can be
+     * removed in the future when feeling secure about the transition.
      */
     public abstract Gtk.Widget? initial_focus { get; }
     
