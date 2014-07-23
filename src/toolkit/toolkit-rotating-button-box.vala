@@ -51,6 +51,9 @@ public class RotatingButtonBox : Gtk.Stack {
     // changes from one button box to another, triggering a situation in GtkWidget where the
     // Popover thinks it has lost focus ... this hacks around the problem by setting the popover
     // to modeless until the transition is complete
+    //
+    // TODO: This is fixed in GTK+ 3.13.6.  When 3.14 is baseline requirement, this code can
+    // be removed.
     private void on_transition_running() {
         if (transition_running && parent_popover == null) {
             // set to modeless to hack around problem
