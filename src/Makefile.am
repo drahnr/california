@@ -93,6 +93,7 @@ california_VALASOURCES = \
 	host/host-calendar-list-item.vala \
 	host/host-create-update-event.vala \
 	host/host-create-update-recurring.vala \
+	host/host-event-time-settings.vala \
 	host/host-import-calendar.vala \
 	host/host-main-window.vala \
 	host/host-quick-create-event.vala \
@@ -181,6 +182,7 @@ california_RC = \
 	rc/calendar-manager-list-item.ui \
 	rc/create-update-event.ui \
 	rc/create-update-recurring.ui \
+	rc/event-time-settings.ui \
 	rc/google-authenticating.ui \
 	rc/google-calendar-list.ui \
 	rc/google-login.ui \

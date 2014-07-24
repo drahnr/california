@@ -292,7 +292,8 @@ public class CreateUpdateEvent : Gtk.Grid, Toolkit.Card {
         update_component(event, true);
         
         // send off to recurring editor
-        jump_to_card_by_name(CreateUpdateRecurring.ID, event);
+        // TODO: reset to CreateUpdateRecurring.ID
+        jump_to_card_by_name(EventTimeSettings.ID, event);
     }
     
     private void on_accept_button_clicked() {

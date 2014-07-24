@@ -163,7 +163,6 @@ public interface Card : Gtk.Widget {
      * This is called before dealing with {@link default_widget} and {@link initial_focus}, so
      * changes to those properties in this call, if need be.
      */
-    // TODO: Use a JumpContext object instead.
     public abstract void jumped_to(Card? from, Jump reason, Value? message);
     
     /**

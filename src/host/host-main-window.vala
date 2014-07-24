@@ -435,9 +435,11 @@ public class MainWindow : Gtk.ApplicationWindow {
         
         CreateUpdateRecurring create_update_recurring = new CreateUpdateRecurring();
         
+        EventTimeSettings event_time_settings = new EventTimeSettings();
+        
         Toolkit.Deck deck = new Toolkit.Deck();
         deck.add_cards(
-            iterate<Toolkit.Card>(quick_create, create_update, create_update_recurring)
+            iterate<Toolkit.Card>(quick_create, create_update, create_update_recurring, event_time_settings)
             .to_array_list()
         );
         
@@ -456,9 +458,11 @@ public class MainWindow : Gtk.ApplicationWindow {
         
         CreateUpdateRecurring create_update_recurring = new CreateUpdateRecurring();
         
+        EventTimeSettings event_time_settings = new EventTimeSettings();
+        
         Toolkit.Deck deck = new Toolkit.Deck();
         deck.add_cards(
-            iterate<Toolkit.Card>(show_event, create_update, create_update_recurring)
+            iterate<Toolkit.Card>(show_event, create_update, create_update_recurring, event_time_settings)
             .to_array_list()
         );
         
